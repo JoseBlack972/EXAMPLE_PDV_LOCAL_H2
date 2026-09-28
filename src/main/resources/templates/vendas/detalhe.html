@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('DANFE NFC-e #' + ${venda.id})}"></head>
+<body class="d-flex flex-column min-vh-100 bg-body-tertiary">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container py-3 flex-grow-1">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-xl-6">
+            <!-- Barra de Ações (não impressa) -->
+            <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+                <a th:href="@{/vendas}" class="btn btn-outline-secondary btn-sm shadow-sm">
+                    <i class="bi bi-arrow-left"></i> Voltar às Vendas
+                </a>
+                <div class="d-flex gap-2">
+                    <a th:href="@{/pdv}" class="btn btn-outline-primary btn-sm shadow-sm">
+                        <i class="bi bi-calculator"></i> Frente de Caixa
+                    </a>
+                    <button class="btn btn-success btn-sm fw-bold shadow" id="btnImprimirDanfe" onclick="window.imprimirCupomFiscal('conteudoComprovante')">
+                        <i class="bi bi-printer-fill me-1"></i> Imprimir DANFE NFC-e
+                    </button>
+                </div>
+            </div>
+
+            <!-- ESTRUTURA DO CUPOM FISCAL REAL (DANFE NFC-e) -->
+            <div class="card shadow-sm border rounded-3 p-4 bg-white cupom-fiscal" id="conteudoComprovante">
+                <!-- CABEÇALHO DO EMISSOR CONFIGURADO -->
+                <div class="text-center border-bottom pb-2 mb-2">
+                    <h6 class="fw-bold mb-0 text-uppercase" th:text="${empresa != null ? empresa.razaoSocial : 'EXEMPLO COMÉRCIO VAREJISTA LTDA'}">EXEMPLO COMÉRCIO VAREJISTA LTDA</h6>
+                    <div class="small">
+                        CNPJ: <span th:text="${empresa != null ? empresa.cnpj : '12.345.678/0001-90'}">12.345.678/0001-90</span> | 
+                        IE: <span th:text="${empresa != null ? empresa.inscricaoEstadual : '123.456.789.111'}">123.456.789.111</span>
+                    </div>
+                    <div class="small" th:text="${empresa != null ? empresa.enderecoFormatado : 'Av. das Nações Unidas, 1000 - Salto / SP - CEP: 13320-000'}">
+                        Av. das Nações Unidas, 1000 - Salto / SP - CEP: 13320-000
+                    </div>
+                    <div class="small" th:if="${empresa != null && empresa.telefone != null && !empresa.telefone.isBlank()}" th:text="'Telefone: ' + ${empresa.telefone}"></div>
+                    <div class="fw-bold mt-2 text-uppercase" style="font-size: 0.85rem;">
+                        DANFE NFC-e - Documento Auxiliar da Nota Fiscal de Consumidor Eletrônica
+                    </div>
+                    <div class="small text-muted">
+                        Ambiente: <span th:text="${empresa != null ? empresa.ambienteSefaz.descricao : 'Homologação'}">Homologação</span> - Não permite aproveitamento de crédito de ICMS
+                    </div>
+                </div>
+
+                <!-- IDENTIFICAÇÃO DO CAIXA E OPERADOR -->
+                <div class="border-bottom pb-2 mb-2 small">
+                    <div class="d-flex justify-content-between">
+                        <span><strong>NFC-e Nº:</strong> <span th:text="${venda.id}"></span></span>
+                        <span><strong>Série:</strong> <span th:text="${empresa != null ? empresa.serieNfce : 1}">001</span></span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span><strong>Emissão:</strong> <span th:text="${#temporals.format(venda.dataHora, 'dd/MM/yyyy HH:mm:ss')}"></span></span>
+                    </div>
+                    <div class="d-flex justify-content-between bg-light p-1 rounded mt-1">
+                        <span><strong>Operador:</strong> <span th:text="${venda.usuario.nome}"></span> (<code th:text="'@' + ${venda.usuario.username}"></code>)</span>
+                        <span><strong>Caixa Origem:</strong> #<span th:text="${venda.caixa.id}"></span></span>
+                    </div>
+                </div>
+
+                <!-- TABELA DE ITENS VENDIDOS -->
+                <div class="mb-2">
+                    <table class="table table-sm border-bottom table-borderless small mb-1">
+                        <thead>
+                            <tr class="border-bottom text-uppercase" style="font-size: 0.75rem;">
+                                <th>#</th>
+                                <th>Cód/Item</th>
+                                <th class="text-center">Qtd</th>
+                                <th class="text-center">UN</th>
+                                <th class="text-end">Vl.Unit</th>
+                                <th class="text-end">Vl.Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="it, stat : ${venda.itens}">
+                                <td th:text="${stat.count}"></td>
+                                <td>
+                                    <div class="fw-bold" th:text="${it.produto.nome}"></div>
+                                    <div class="text-muted" style="font-size: 0.7rem;" th:text="'EAN: ' + ${it.produto.codigoBarras}"></div>
+                                </td>
+                                <td class="text-center" th:text="${it.quantidade}"></td>
+                                <td class="text-center">UN</td>
+                                <td class="text-end">R$ <span th:text="${#numbers.formatDecimal(it.precoUnitario, 1, 'POINT', 2, 'COMMA')}"></span></td>
+                                <td class="text-end fw-bold">R$ <span th:text="${#numbers.formatDecimal(it.subtotal, 1, 'POINT', 2, 'COMMA')}"></span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- TOTAIS E PAGAMENTO -->
+                <div class="border-bottom pb-2 mb-2 small">
+                    <div class="d-flex justify-content-between">
+                        <span>Qtd. Total de Itens:</span>
+                        <span class="fw-bold" th:text="${#lists.size(venda.itens)}"></span>
+                    </div>
+                    <div class="d-flex justify-content-between fs-5 fw-bold text-success my-1 border-top border-bottom py-1">
+                        <span>VALOR TOTAL R$:</span>
+                        <span>R$ <span th:text="${#numbers.formatDecimal(venda.valorTotal, 1, 'POINT', 2, 'COMMA')}"></span></span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>FORMA DE PAGAMENTO:</span>
+                        <span class="fw-bold" th:text="${venda.formaPagamento.descricao}"></span>
+                    </div>
+                    <div th:if="${venda.formaPagamento.name() == 'DINHEIRO'}" class="d-flex justify-content-between">
+                        <span>Valor Recebido em Dinheiro:</span>
+                        <span>R$ <span th:text="${#numbers.formatDecimal(venda.valorRecebido, 1, 'POINT', 2, 'COMMA')}"></span></span>
+                    </div>
+                    <div th:if="${venda.formaPagamento.name() == 'DINHEIRO'}" class="d-flex justify-content-between fw-bold text-primary">
+                        <span>Troco:</span>
+                        <span>R$ <span th:text="${#numbers.formatDecimal(venda.troco, 1, 'POINT', 2, 'COMMA')}"></span></span>
+                    </div>
+                </div>
+
+                <!-- INFORMAÇÃO DOS TRIBUTOS (LEI FEDERAL 12.741/2012) -->
+                <div class="text-center border-bottom pb-2 mb-2 text-muted" style="font-size: 0.75rem;">
+                    Valor aprox. dos Tributos: R$ <span th:text="${#numbers.formatDecimal(venda.valorTributosAproximados, 1, 'POINT', 2, 'COMMA')}"></span> (18,45%)
+                    <br>Fonte: IBPT / Confaz - SP
+                </div>
+
+                <!-- IDENTIFICAÇÃO DO CONSUMIDOR (CPF / CNPJ) -->
+                <div class="border-bottom pb-2 mb-2 small">
+                    <div class="fw-bold text-uppercase" style="font-size: 0.75rem;">Consumidor:</div>
+                    <div th:if="${venda.cpfCnpj != null && venda.cpfCnpj != ''}">
+                        <span>CPF/CNPJ: </span><strong class="font-monospace" th:text="${venda.cpfCnpj}"></strong>
+                    </div>
+                    <div th:if="${venda.cpfCnpj == null || venda.cpfCnpj == ''}" class="text-muted fst-italic">
+                        CONSUMIDOR NÃO IDENTIFICADO
+                    </div>
+                </div>
+
+                <!-- CHAVE DE ACESSO E DADOS DA SEFAZ -->
+                <div class="text-center small border-bottom pb-2 mb-2" style="font-size: 0.75rem;">
+                    <div class="fw-bold">CHAVE DE ACESSO:</div>
+                    <div class="font-monospace fw-bold tracking-tight text-dark" 
+                         th:text="'3526 0912 3456 7800 0190 6500 1000 0000 0' + ${venda.id} + ' 1234 5678'">
+                    </div>
+                    <div class="mt-1">
+                        <strong>Protocolo de Autorização:</strong> 135260009874521<br>
+                        Autorizado pelo Sistema SEFAZ / Produção em <span th:text="${#temporals.format(venda.dataHora, 'dd/MM/yyyy HH:mm:ss')}"></span>
+                    </div>
+                </div>
+
+                <!-- QR CODE SEFAZ (SIMULAÇÃO SVG AUTOSSUFICIENTE) -->
+                <div class="text-center py-2 border-bottom mb-2">
+                    <svg width="120" height="120" viewBox="0 0 100 100" class="mx-auto border p-1 rounded">
+                        <rect width="100" height="100" fill="white" />
+                        <rect x="10" y="10" width="25" height="25" fill="black" />
+                        <rect x="15" y="15" width="15" height="15" fill="white" />
+                        <rect x="18" y="18" width="9" height="9" fill="black" />
+                        <rect x="65" y="10" width="25" height="25" fill="black" />
+                        <rect x="70" y="15" width="15" height="15" fill="white" />
+                        <rect x="73" y="18" width="9" height="9" fill="black" />
+                        <rect x="10" y="65" width="25" height="25" fill="black" />
+                        <rect x="15" y="70" width="15" height="15" fill="white" />
+                        <rect x="18" y="73" width="9" height="9" fill="black" />
+                        <rect x="45" y="15" width="10" height="10" fill="black" />
+                        <rect x="40" y="35" width="20" height="10" fill="black" />
+                        <rect x="35" y="55" width="10" height="15" fill="black" />
+                        <rect x="55" y="50" width="15" height="10" fill="black" />
+                        <rect x="70" y="65" width="20" height="15" fill="black" />
+                        <rect x="45" y="75" width="15" height="15" fill="black" />
+                    </svg>
+                    <div class="text-muted mt-1" style="font-size: 0.7rem;">
+                        Consulte pela Chave de Acesso em:<br>
+                        <strong>https://www.fazenda.sp.gov.br/nfce/consulta</strong>
+                    </div>
+                </div>
+
+                <div class="text-center text-muted" style="font-size: 0.75rem;">
+                    Obrigado pela preferência!
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

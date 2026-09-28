@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="'Relatório Gerencial - ' + ${relatorio.tipoRelatorio}">Relatório Gerencial</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 12mm 15mm;
+        }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11px;
+            color: #000;
+            background: #fff;
+        }
+        .header-relatorio {
+            border-bottom: 2px solid #000;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+        .table-relatorio th {
+            background-color: #f2f2f2 !important;
+            font-size: 10px;
+            text-transform: uppercase;
+            border: 1px solid #ddd;
+        }
+        .table-relatorio td {
+            border: 1px solid #ddd;
+            font-size: 10.5px;
+        }
+        .card-metric {
+            border: 1px solid #ccc;
+            padding: 8px;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { margin: 0; padding: 0; }
+        }
+    </style>
+</head>
+<body class="p-3">
+
+    <!-- BARRA SUPERIOR NÃO IMPRESSA -->
+    <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light border rounded no-print">
+        <span class="small text-muted">Visualização de Impressão (Padrão Folha A4)</span>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.close()">Fechar Janela</button>
+            <button type="button" class="btn btn-success btn-sm fw-bold" onclick="window.print()">
+                Imprimir Relatório (Ctrl + P)
+            </button>
+        </div>
+    </div>
+
+    <!-- CABEÇALHO FORMAL DA EMPRESA UTILIZADORA -->
+    <div class="header-relatorio text-center">
+        <h4 class="fw-bold mb-0 text-uppercase" th:text="${empresa.razaoSocial}"></h4>
+        <div style="font-size: 11px;">
+            <strong>Nome Fantasia:</strong> <span th:text="${empresa.nomeFantasia}"></span> | 
+            <strong>CNPJ:</strong> <span th:text="${empresa.cnpj}"></span> | 
+            <strong>IE:</strong> <span th:text="${empresa.inscricaoEstadual}"></span>
+        </div>
+        <div style="font-size: 10px;" th:text="${empresa.enderecoFormatado} + ' - Tel: ' + ${empresa.telefone}"></div>
+        <hr class="my-2">
+        <h5 class="fw-bold mb-1 text-uppercase">
+            <span th:if="${relatorio.tipoRelatorio == 'CONSOLIDADO'}">RELATÓRIO CONSOLIDADO DE GESTÃO EXECUTIVA</span>
+            <span th:if="${relatorio.tipoRelatorio == 'VENDAS'}">RELATÓRIO GERENCIAL DE VENDAS</span>
+            <span th:if="${relatorio.tipoRelatorio == 'HORARIOS'}">RELATÓRIO DE VENDAS POR FAIXA DE HORÁRIO (PICO)</span>
+            <span th:if="${relatorio.tipoRelatorio == 'POR_CAIXA'}">RELATÓRIO DE VENDAS POR TERMINAL DE CAIXA</span>
+            <span th:if="${relatorio.tipoRelatorio == 'POR_DIA'}">RELATÓRIO DE EVOLUÇÃO DIÁRIA DE FATURAMENTO</span>
+            <span th:if="${relatorio.tipoRelatorio == 'CAIXA'}">RELATÓRIO DE CAIXAS, SANGRIA E SUPRIMENTO</span>
+            <span th:if="${relatorio.tipoRelatorio == 'ESTOQUE'}">RELATÓRIO DE POSIÇÃO DE ESTOQUE E REPOSIÇÃO</span>
+        </h5>
+        <div class="d-flex justify-content-between px-2 text-muted" style="font-size: 10px;">
+            <span><strong>Período de Apuração:</strong> <span th:text="${relatorio.periodo}"></span></span>
+            <span><strong>Data de Emissão:</strong> <span th:text="${#temporals.format(relatorio.dataHoraGeracao, 'dd/MM/yyyy HH:mm:ss')}"></span></span>
+            <span><strong>Gestor Responsável:</strong> <span th:text="${relatorio.gestorNome}"></span></span>
+        </div>
+    </div>
+
+    <!-- MÉTRICAS PRINCIPAIS -->
+    <div class="row g-2 mb-3 text-center">
+        <div class="col-3">
+            <div class="card-metric">
+                <div class="text-muted" style="font-size: 9px;">FATURAMENTO TOTAL</div>
+                <strong class="fs-6 text-success" th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.totalVendasValor, 1, 'POINT', 2, 'COMMA')}"></strong>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="card-metric">
+                <div class="text-muted" style="font-size: 9px;">QUANTIDADE DE VENDAS</div>
+                <strong class="fs-6" th:text="${relatorio.quantidadeVendas} + ' vendas'"></strong>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="card-metric">
+                <div class="text-muted" style="font-size: 9px;">TICKET MÉDIO</div>
+                <strong class="fs-6 text-primary" th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.ticketMedio, 1, 'POINT', 2, 'COMMA')}"></strong>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="card-metric">
+                <div class="text-muted" style="font-size: 9px;">TOTAL RECEBIDO EM DINHEIRO</div>
+                <strong class="fs-6" th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.totalDinheiro, 1, 'POINT', 2, 'COMMA')}"></strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABELAS ESPECÍFICAS DE CADA RELATÓRIO -->
+
+    <!-- 1. VENDAS POR HORÁRIO -->
+    <div th:if="${relatorio.tipoRelatorio == 'HORARIOS' || relatorio.tipoRelatorio == 'CONSOLIDADO'}" class="mb-3">
+        <h6 class="fw-bold border-bottom pb-1 text-uppercase">Distribuição de Vendas por Faixa de Horário</h6>
+        <table class="table table-sm table-relatorio align-middle mb-2">
+            <thead>
+                <tr>
+                    <th>Faixa de Horário</th>
+                    <th class="text-center">Quantidade de Vendas</th>
+                    <th class="text-end">Total Faturado (R$)</th>
+                    <th class="text-end">% do Faturamento</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="vh : ${relatorio.vendasPorHorario}">
+                    <td th:text="${vh.faixa}"></td>
+                    <td class="text-center" th:text="${vh.quantidadeVendas}"></td>
+                    <td class="text-end fw-bold" th:text="'R$ ' + ${#numbers.formatDecimal(vh.totalValor, 1, 'POINT', 2, 'COMMA')}"></td>
+                    <td class="text-end" th:text="${vh.percentual} + '%'"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 2. VENDAS POR CAIXA -->
+    <div th:if="${relatorio.tipoRelatorio == 'POR_CAIXA'}" class="mb-3">
+        <h6 class="fw-bold border-bottom pb-1 text-uppercase">Vendas Agrupadas por Terminal de Caixa</h6>
+        <table class="table table-sm table-relatorio align-middle mb-2">
+            <thead>
+                <tr>
+                    <th># Caixa</th>
+                    <th>Operador</th>
+                    <th>Abertura</th>
+                    <th>Fechamento</th>
+                    <th class="text-center">Qtd Vendas</th>
+                    <th class="text-end">Total Vendido (R$)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="vc : ${relatorio.vendasPorCaixa}">
+                    <td><strong th:text="'Caixa #' + ${vc.caixaId}"></strong></td>
+                    <td th:text="${vc.operadorNome}"></td>
+                    <td th:text="${#temporals.format(vc.dataAbertura, 'dd/MM/yyyy HH:mm')}"></td>
+                    <td th:text="${vc.dataFechamento != null ? #temporals.format(vc.dataFechamento, 'dd/MM/yyyy HH:mm') : 'Em Aberto'}"></td>
+                    <td class="text-center" th:text="${vc.quantidadeVendas}"></td>
+                    <td class="text-end fw-bold" th:text="'R$ ' + ${#numbers.formatDecimal(vc.totalValor, 1, 'POINT', 2, 'COMMA')}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 3. EVOLUÇÃO DIÁRIA -->
+    <div th:if="${relatorio.tipoRelatorio == 'POR_DIA'}" class="mb-3">
+        <h6 class="fw-bold border-bottom pb-1 text-uppercase">Faturamento Dia a Dia</h6>
+        <table class="table table-sm table-relatorio align-middle mb-2">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th class="text-center">Qtd Vendas</th>
+                    <th class="text-end">Dinheiro (R$)</th>
+                    <th class="text-end">Cartões / PIX (R$)</th>
+                    <th class="text-end">Total do Dia (R$)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="vd : ${relatorio.vendasPorDia}">
+                    <td th:text="${#temporals.format(vd.data, 'dd/MM/yyyy (E)')}"></td>
+                    <td class="text-center" th:text="${vd.quantidadeVendas}"></td>
+                    <td class="text-end" th:text="'R$ ' + ${#numbers.formatDecimal(vd.totalDinheiro, 1, 'POINT', 2, 'COMMA')}"></td>
+                    <td class="text-end" th:text="'R$ ' + ${#numbers.formatDecimal(vd.totalCartaoPix, 1, 'POINT', 2, 'COMMA')}"></td>
+                    <td class="text-end fw-bold" th:text="'R$ ' + ${#numbers.formatDecimal(vd.totalGeral, 1, 'POINT', 2, 'COMMA')}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 4. VENDAS DETALHADAS -->
+    <div th:if="${relatorio.tipoRelatorio == 'VENDAS'}" class="mb-3">
+        <h6 class="fw-bold border-bottom pb-1 text-uppercase">Lista Detalhada de Vendas</h6>
+        <table class="table table-sm table-relatorio align-middle mb-2">
+            <thead>
+                <tr>
+                    <th># NFC-e</th>
+                    <th>Data / Hora</th>
+                    <th>Caixa</th>
+                    <th>Operador</th>
+                    <th>Forma Pagto</th>
+                    <th class="text-end">Valor Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="v : ${relatorio.vendasDetalhadas}">
+                    <td th:text="'#' + ${v.id}"></td>
+                    <td th:text="${#temporals.format(v.dataHora, 'dd/MM/yyyy HH:mm:ss')}"></td>
+                    <td th:text="'Caixa #' + ${v.caixa.id}"></td>
+                    <td th:text="${v.usuario.nome}"></td>
+                    <td th:text="${v.formaPagamento.descricao}"></td>
+                    <td class="text-end fw-bold" th:text="'R$ ' + ${#numbers.formatDecimal(v.valorTotal, 1, 'POINT', 2, 'COMMA')}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 5. ESTOQUE -->
+    <div th:if="${relatorio.tipoRelatorio == 'ESTOQUE'}" class="mb-3">
+        <h6 class="fw-bold border-bottom pb-1 text-uppercase">Posição Geral de Estoque</h6>
+        <table class="table table-sm table-relatorio align-middle mb-2">
+            <thead>
+                <tr>
+                    <th>Cód. EAN</th>
+                    <th>Descrição do Produto</th>
+                    <th>Categoria</th>
+                    <th class="text-end">Preço Unit.</th>
+                    <th class="text-center">Estoque Atual</th>
+                    <th class="text-end">Subtotal Estoque</th>
+                    <th class="text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="p : ${relatorio.todosProdutos}">
+                    <td th:text="${p.codigoBarras}"></td>
+                    <td th:text="${p.nome}"></td>
+                    <td th:text="${p.categoria != null ? p.categoria.nome : 'Geral'}"></td>
+                    <td class="text-end" th:text="'R$ ' + ${#numbers.formatDecimal(p.preco, 1, 'POINT', 2, 'COMMA')}"></td>
+                    <td class="text-center fw-bold" th:text="${p.estoque} + ' un'"></td>
+                    <td class="text-end fw-bold" th:text="'R$ ' + ${#numbers.formatDecimal(p.preco * p.estoque, 1, 'POINT', 2, 'COMMA')}"></td>
+                    <td class="text-center" th:text="${p.estoque <= 0 ? 'ZERADO' : (p.estoque <= 5 ? 'BAIXO' : 'OK')}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 6. CAIXAS E MOVIMENTAÇÕES -->
+    <div th:if="${relatorio.tipoRelatorio == 'CAIXA'}" class="mb-3">
+        <h6 class="fw-bold border-bottom pb-1 text-uppercase">Turnos de Caixa Operados</h6>
+        <table class="table table-sm table-relatorio align-middle mb-2">
+            <thead>
+                <tr>
+                    <th># Caixa</th>
+                    <th>Operador</th>
+                    <th>Abertura</th>
+                    <th>Fechamento</th>
+                    <th class="text-end">Inicial</th>
+                    <th class="text-end">Calculado</th>
+                    <th class="text-end">Informado</th>
+                    <th class="text-end">Diferença</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="c : ${relatorio.caixasDetalhados}">
+                    <td th:text="'#' + ${c.id}"></td>
+                    <td th:text="${c.usuario.nome}"></td>
+                    <td th:text="${#temporals.format(c.dataAbertura, 'dd/MM/yyyy HH:mm')}"></td>
+                    <td th:text="${c.dataFechamento != null ? #temporals.format(c.dataFechamento, 'dd/MM/yyyy HH:mm') : 'Aberto'}"></td>
+                    <td class="text-end" th:text="'R$ ' + ${#numbers.formatDecimal(c.saldoInicial, 1, 'POINT', 2, 'COMMA')}"></td>
+                    <td class="text-end" th:text="${c.saldoFinalCalculado != null ? 'R$ ' + #numbers.formatDecimal(c.saldoFinalCalculado, 1, 'POINT', 2, 'COMMA') : '-'}"></td>
+                    <td class="text-end" th:text="${c.saldoFinalInformado != null ? 'R$ ' + #numbers.formatDecimal(c.saldoFinalInformado, 1, 'POINT', 2, 'COMMA') : '-'}"></td>
+                    <td class="text-end fw-bold" th:text="${c.diferenca != null ? 'R$ ' + #numbers.formatDecimal(c.diferenca, 1, 'POINT', 2, 'COMMA') : '-'}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- RODAPÉ DE ASSINATURA -->
+    <div class="row mt-5 pt-4 text-center">
+        <div class="col-6">
+            <div style="border-top: 1px solid #000; width: 80%; margin: auto; padding-top: 4px;">
+                <strong th:text="${relatorio.gestorNome}"></strong><br>
+                <span>Gestor Responsável</span>
+            </div>
+        </div>
+        <div class="col-6">
+            <div style="border-top: 1px solid #000; width: 80%; margin: auto; padding-top: 4px;">
+                <strong>Diretoria / Auditoria Fiscal</strong><br>
+                <span>Conferência & Visto</span>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

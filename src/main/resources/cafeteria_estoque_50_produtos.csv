@@ -1,0 +1,53 @@
+nome;codigo_barras;preco;estoque;categoria;ativo
+Café Expresso Tradicional 30ml;7891000400001;4.50;100;Cafeteria;true
+Café Expresso Duplo 60ml;7891000400002;7.00;80;Cafeteria;true
+Café Americano 150ml;7891000400003;6.00;70;Cafeteria;true
+Café Pingado Tradicional 150ml;7891000400004;5.50;90;Cafeteria;true
+Café com Leite Especial 200ml;7891000400005;7.50;85;Cafeteria;true
+Cappuccino Italiano Clássico 150ml;7891000400006;8.50;60;Cafeteria;true
+Cappuccino com Canela e Chocolate 200ml;7891000400007;9.50;65;Cafeteria;true
+Mocaccino com Ganache de Chocolate 200ml;7891000400008;11.00;50;Cafeteria;true
+Flat White com Leite Vaporizado 180ml;7891000400009;10.00;45;Cafeteria;true
+Café Coado V60 Grão Especial 200ml;7891000400010;9.00;40;Cafeteria;true
+Cold Brew Café Gelado Artesanal 300ml;7891000400011;12.00;35;Cafés Gelados;true
+Iced Latte com Xarope de Baunilha 350ml;7891000400012;13.50;30;Cafés Gelados;true
+Iced Caramel Macchiato 350ml;7891000400013;14.00;35;Cafés Gelados;true
+Espresso Tônica com Limão Siciliano 300ml;7891000400014;13.00;25;Cafés Gelados;true
+Frappuccino de Café com Chocolate 400ml;7891000400015;16.50;40;Cafés Gelados;true
+Frappuccino de Doce de Leite com Chantilly 400ml;7891000400016;17.00;35;Cafés Gelados;true
+Chocolate Quente Cremoso Europeu 200ml;7891000400017;10.50;50;Bebidas Quentes;true
+Chocolate Quente Especial com Marshmallow 250ml;7891000400018;12.50;40;Bebidas Quentes;true
+Chá Verde com Hortelã Orgânico 200ml;7891000400019;6.50;60;Bebidas Quentes;true
+Chá Indiano Masala Chai com Especiarias 250ml;7891000400020;9.00;45;Bebidas Quentes;true
+Chá Gelado de Pêssego da Casa 350ml;7891000400021;8.00;55;Bebidas Geladas;true
+Suco Natural de Laranja 400ml;7891000400022;8.00;50;Sucos Naturais;true
+Suco de Melancia com Gengibre e Hortelã 400ml;7891000400023;9.50;35;Sucos Naturais;true
+Suco Verde Detox (Couve, Abacaxi e Maçã) 400ml;7891000400024;10.00;30;Sucos Naturais;true
+Soda Italiana de Maçã Verde 350ml;7891000400025;11.00;40;Bebidas Geladas;true
+Soda Italiana de Frutas Vermelhas 350ml;7891000400026;11.00;40;Bebidas Geladas;true
+Água Mineral sem Gás 500ml;7891000400027;3.50;120;Bebidas Geladas;true
+Água Mineral com Gás 500ml;7891000400028;4.00;100;Bebidas Geladas;true
+Água Tônica Antarctica Lata 350ml;7891000400029;6.00;50;Bebidas Geladas;true
+Refrigerante Coca-Cola Lata 350ml;7891000400030;6.00;80;Bebidas Geladas;true
+Refrigerante Coca-Cola Zero Lata 350ml;7891000400031;6.00;70;Bebidas Geladas;true
+Pão de Queijo Mineiro Tradicional 70g;7891000400032;4.50;90;Lanches & Salgados;true
+Pão de Queijo Recheado com Catupiry 90g;7891000400033;6.50;60;Lanches & Salgados;true
+Croissant Francês Tradicional na Manteiga;7891000400034;8.50;40;Lanches & Salgados;true
+Croissant Recheado com Presunto e Queijo Prato;7891000400035;12.50;35;Lanches & Salgados;true
+Croissant com Peito de Peru e Queijo Brie;7891000400036;15.90;25;Lanches & Salgados;true
+Toast Rústico de Fermentação com Avocado e Ovo Poché;7891000400037;18.00;20;Lanches & Salgados;true
+Tostex Clássico Misto Quente no Pão de Brioche;7891000400038;11.50;45;Lanches & Salgados;true
+Quiche Lorraine (Bacon Crocante e Queijo Gruvère);7891000400039;13.00;30;Lanches & Salgados;true
+Quiche de Alho Poró com Ricota e Cogumelos;7891000400040;13.00;25;Lanches & Salgados;true
+Empada Artesanal de Palmito Cremoso;7891000400041;7.50;40;Lanches & Salgados;true
+Coxinha Cremosa de Frango com Requeijão Empanada;7891000400042;8.00;50;Lanches & Salgados;true
+Folhado de Frango com Requeijão e Milho;7891000400043;8.50;35;Lanches & Salgados;true
+Bolo Caseiro de Cenoura com Calda de Brigadeiro (Fatia);7891000400044;8.50;30;Confeitaria & Doces;true
+Bolo Red Velvet com Recheio de Cream Cheese (Fatia);7891000400045;12.50;20;Confeitaria & Doces;true
+Cheesecake com Calda Artesanal de Frutas Vermelhas;7891000400046;14.00;20;Confeitaria & Doces;true
+Brownie Tradicional com Nozes Pecan e Chocolate 70%;7891000400047;9.50;40;Confeitaria & Doces;true
+Cookie Tradicional Americano com Gotas de Chocolate;7891000400048;7.00;50;Confeitaria & Doces;true
+Cookie Red Velvet Recheado com Nutella Pura;7891000400049;9.00;35;Confeitaria & Doces;true
+Torta Holandesa Cremosa (Fatia Individual);7891000400050;13.50;22;Confeitaria & Doces;true
+Tiramisù Tradicional Italiano com Queijo Mascarpone;7891000400051;15.00;18;Confeitaria & Doces;true
+Brigadeiro Gourmet Artesanal de Café 30g;7891000400052;4.00;60;Confeitaria & Doces;true

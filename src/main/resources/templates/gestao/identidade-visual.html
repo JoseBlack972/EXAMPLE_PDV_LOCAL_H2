@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Identidade Visual & Logos da Empresa')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-body-tertiary">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container py-3 flex-grow-1">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <!-- CABEÇALHO -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h4 class="fw-bold mb-1"><i class="bi bi-brush text-primary me-2"></i> Identidade Visual & Logotipos da Empresa</h4>
+                    <p class="text-muted small mb-0">Personalize o logotipo, ícone da marca e nome fantasia exibidos na barra superior, cupons e relatórios.</p>
+                </div>
+                <a th:href="@{/gestao}" class="btn btn-outline-secondary btn-sm shadow-sm">
+                    <i class="bi bi-arrow-left"></i> Voltar à Gestão
+                </a>
+            </div>
+
+            <!-- FORMULÁRIO DE IDENTIDADE VISUAL -->
+            <div class="card shadow-sm border-0 mb-4 bg-body">
+                <div class="card-body p-4">
+                    <form th:action="@{/gestao/identidade-visual}" method="post">
+                        <!-- NOME FANTASIA -->
+                        <div class="mb-3">
+                            <label for="nomeFantasia" class="form-label fw-bold">Nome Fantasia da Marca / Loja: *</label>
+                            <input type="text" class="form-control form-control-lg fw-bold" id="nomeFantasia" name="nomeFantasia" 
+                                   th:value="${empresa.nomeFantasia}" required>
+                            <div class="form-text">Este nome é exibido na barra superior do PDV e no cabeçalho das NFC-e.</div>
+                        </div>
+
+                        <!-- SELEÇÃO DE ÍCONE DA MARCA -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Ícone Representativo da Marca (Bootstrap Icons):</label>
+                            <div class="row g-2" id="gridIcones">
+                                <div class="col-md-3 col-6">
+                                    <div class="p-2 border rounded text-center icone-card" style="cursor: pointer;" onclick="selecionarIcone('bi-shop')">
+                                        <i class="bi bi-shop fs-2 text-primary d-block mb-1"></i>
+                                        <small class="fw-semibold">Loja / Mercado</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="p-2 border rounded text-center icone-card" style="cursor: pointer;" onclick="selecionarIcone('bi-cart4')">
+                                        <i class="bi bi-cart4 fs-2 text-success d-block mb-1"></i>
+                                        <small class="fw-semibold">Carrinho de Compras</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="p-2 border rounded text-center icone-card" style="cursor: pointer;" onclick="selecionarIcone('bi-bag-check')">
+                                        <i class="bi bi-bag-check fs-2 text-info d-block mb-1"></i>
+                                        <small class="fw-semibold">Sacola / Varejo</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="p-2 border rounded text-center icone-card" style="cursor: pointer;" onclick="selecionarIcone('bi-cup-hot')">
+                                        <i class="bi bi-cup-hot fs-2 text-warning d-block mb-1"></i>
+                                        <small class="fw-semibold">Café / Lanches</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="p-2 border rounded text-center icone-card" style="cursor: pointer;" onclick="selecionarIcone('bi-egg-fried')">
+                                        <i class="bi bi-egg-fried fs-2 text-danger d-block mb-1"></i>
+                                        <small class="fw-semibold">Restaurante</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="p-2 border rounded text-center icone-card" style="cursor: pointer;" onclick="selecionarIcone('bi-basket')">
+                                        <i class="bi bi-basket fs-2 text-secondary d-block mb-1"></i>
+                                        <small class="fw-semibold">Cesta Hortifruti</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="p-2 border rounded text-center icone-card" style="cursor: pointer;" onclick="selecionarIcone('bi-capsule')">
+                                        <i class="bi bi-capsule fs-2 text-primary d-block mb-1"></i>
+                                        <small class="fw-semibold">Farmácia / Saúde</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="p-2 border rounded text-center icone-card" style="cursor: pointer;" onclick="selecionarIcone('bi-tools')">
+                                        <i class="bi bi-tools fs-2 text-dark d-block mb-1"></i>
+                                        <small class="fw-semibold">Materiais / Ferramentas</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="iconeBootstrap" name="iconeBootstrap" th:value="${empresa.iconeBootstrap}">
+                        </div>
+
+                        <!-- LOGOTIPO DA EMPRESA (URL OU BASE64) -->
+                        <div class="mb-3">
+                            <label for="logoUrl" class="form-label fw-bold">URL ou Imagem Base64 do Logotipo:</label>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text bg-body-tertiary"><i class="bi bi-image"></i></span>
+                                <input type="text" class="form-control font-monospace" id="logoUrl" name="logoUrl" 
+                                       th:value="${empresa.logoUrl}" placeholder="https://exemplo.com.br/logo.png ou data:image/png;base64,...">
+                                <button type="button" class="btn btn-outline-secondary" onclick="limparLogo()">Limpar Logo</button>
+                            </div>
+                            <div class="form-text small">Deixe em branco para usar o ícone visual padrão escolhido acima.</div>
+                        </div>
+
+                        <!-- PRÉ-VISUALIZAÇÃO EM TEMPO REAL -->
+                        <div class="border rounded-3 p-3 bg-light-subtle mb-4">
+                            <label class="form-label fw-bold text-dark mb-2"><i class="bi bi-eye text-primary me-1"></i> Pré-Visualização na Barra Superior (Navbar):</label>
+                            <div class="p-2 bg-dark rounded d-flex align-items-center gap-2" style="max-width: 380px;">
+                                <div id="previewIcone" th:if="${!empresa.temLogoPersonalizada()}">
+                                    <i th:class="'bi fs-4 text-white ' + ${empresa.iconeBootstrap}"></i>
+                                </div>
+                                <img id="previewLogo" th:if="${empresa.temLogoPersonalizada()}" th:src="${empresa.logoUrl}" 
+                                     alt="Logo" style="max-height: 32px; max-width: 120px;" class="rounded">
+                                <span class="fw-bold text-white fs-5" id="previewNome" th:text="${empresa.nomeFantasia}"></span>
+                            </div>
+                        </div>
+
+                        <!-- BOTÕES DE SUBMISSÃO -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a th:href="@{/gestao}" class="btn btn-secondary shadow-sm">Cancelar</a>
+                            <button type="submit" class="btn btn-success fw-bold px-4 shadow">
+                                <i class="bi bi-check-lg me-1"></i> Salvar Identidade Visual da Empresa
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script>
+function selecionarIcone(classe) {
+    document.getElementById("iconeBootstrap").value = classe;
+    document.querySelectorAll(".icone-card").forEach(c => c.classList.remove("border-primary", "bg-primary-subtle"));
+    event.currentTarget.classList.add("border-primary", "bg-primary-subtle");
+
+    const prevIcone = document.getElementById("previewIcone");
+    if (prevIcone) {
+        prevIcone.innerHTML = `<i class="bi fs-4 text-white ${classe}"></i>`;
+    }
+}
+
+function limparLogo() {
+    document.getElementById("logoUrl").value = "";
+    const previewLogo = document.getElementById("previewLogo");
+    if (previewLogo) previewLogo.style.display = "none";
+    let prevIcone = document.getElementById("previewIcone");
+    if (!prevIcone) {
+        prevIcone = document.createElement("div");
+        prevIcone.id = "previewIcone";
+        const iconeClasse = document.getElementById("iconeBootstrap").value || "bi-shop";
+        prevIcone.innerHTML = `<i class="bi fs-4 text-white ${iconeClasse}"></i>`;
+        document.getElementById("previewNome").before(prevIcone);
+    } else {
+        prevIcone.style.display = "";
+    }
+}
+
+// Atualizar nome em tempo real no preview
+document.getElementById("nomeFantasia").addEventListener("input", (e) => {
+    document.getElementById("previewNome").innerText = e.target.value || "Sua Marca";
+});
+
+// Atualizar logo em tempo real no preview
+document.getElementById("logoUrl").addEventListener("input", (e) => {
+    const val = e.target.value.trim();
+    let previewLogo = document.getElementById("previewLogo");
+    let prevIcone = document.getElementById("previewIcone");
+
+    if (val) {
+        if (!previewLogo) {
+            previewLogo = document.createElement("img");
+            previewLogo.id = "previewLogo";
+            previewLogo.style.maxHeight = "32px";
+            previewLogo.style.maxWidth = "120px";
+            previewLogo.className = "rounded";
+            document.getElementById("previewNome").before(previewLogo);
+        }
+        previewLogo.src = val;
+        previewLogo.style.display = "";
+        if (prevIcone) prevIcone.style.display = "none";
+    } else {
+        if (previewLogo) previewLogo.style.display = "none";
+        if (prevIcone) prevIcone.style.display = "";
+    }
+});
+</script>
+</body>
+</html>

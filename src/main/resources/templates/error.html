@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Erro no Sistema')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-body-tertiary">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+
+<main class="container my-auto py-5 text-center">
+    <div class="card shadow p-5 border-0 rounded-4 mx-auto bg-body" style="max-width: 580px;">
+        <i class="bi bi-exclamation-triangle-fill text-warning display-2 mb-3"></i>
+        <h3 class="fw-bold">Ops! Algo inesperado aconteceu.</h3>
+        <p class="text-muted">A operação não pôde ser concluída no momento.</p>
+
+        <div th:if="${message != null}" class="alert alert-danger text-start small font-monospace my-3">
+            <strong class="d-block mb-1">Detalhes do Erro:</strong>
+            <span th:text="${message}"></span>
+        </div>
+
+        <div class="d-flex justify-content-center gap-2 mt-3">
+            <a th:href="@{/pdv}" class="btn btn-primary fw-bold px-4">
+                <i class="bi bi-cart me-1"></i> Ir para Frente de Caixa
+            </a>
+            <button onclick="window.history.back()" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </button>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

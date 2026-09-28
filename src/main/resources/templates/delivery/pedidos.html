@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Controle de Delivery (iFood / 99Food)')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-body-tertiary">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container-fluid px-4 py-4 flex-grow-1">
+    <!-- CABEÇALHO -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold mb-1">
+                <i class="bi bi-bicycle text-danger me-1"></i> Painel de Pedidos Delivery
+            </h3>
+            <p class="text-muted small mb-0">Integração iFood, 99Food e pedidos próprios com despacho de motoboys</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a th:href="@{/delivery/motoboys}" class="btn btn-outline-primary fw-bold shadow-sm">
+                <i class="bi bi-person-badge-fill me-1"></i> Cadastro de Motoboys
+            </a>
+            <button type="button" class="btn btn-success fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNovoPedido">
+                <i class="bi bi-plus-circle-fill me-1"></i> Novo Pedido Delivery
+            </button>
+        </div>
+    </div>
+
+    <!-- CARDS RESUMO -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-4 border-warning bg-body p-3">
+                <div class="text-muted small text-uppercase fw-semibold">Novos / Em Preparo</div>
+                <h4 class="fw-bold text-warning mb-0" th:text="${qtdNovos} + ' pedidos'">0 pedidos</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-4 border-primary bg-body p-3">
+                <div class="text-muted small text-uppercase fw-semibold">Em Rota (Com Motoboy)</div>
+                <h4 class="fw-bold text-primary mb-0" th:text="${qtdEmRota} + ' em rota'">0 em rota</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-4 border-info bg-body p-3">
+                <div class="text-muted small text-uppercase fw-semibold">Saiu c/ Máquina de Cartão</div>
+                <h4 class="fw-bold text-info mb-0" th:text="${qtdMaquinas} + ' máquinas na rua'">0 máquinas na rua</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-4 border-success bg-body p-3">
+                <div class="text-muted small text-uppercase fw-semibold">Entregues Hoje</div>
+                <h4 class="fw-bold text-success mb-0" th:text="${qtdEntregues} + ' entregues'">0 entregues</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABELA GERAL DE PEDIDOS DELIVERY -->
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden bg-body">
+        <div class="card-header bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold m-0"><i class="bi bi-list-task text-primary me-1"></i> Fila de Pedidos de Entrega</h6>
+            <span class="badge bg-secondary" th:text="${#lists.size(pedidos)} + ' total'"></span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 10%;">Plataforma</th>
+                        <th style="width: 10%;"># Pedido</th>
+                        <th style="width: 15%;">Cliente & Telefone</th>
+                        <th style="width: 20%;">Endereço de Entrega</th>
+                        <th style="width: 15%;">Itens do Pedido</th>
+                        <th style="width: 10%;" class="text-end">Total</th>
+                        <th style="width: 10%;">Status</th>
+                        <th style="width: 12%;">Motoboy & Máquina</th>
+                        <th style="width: 8%;" class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(pedidos)}">
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="bi bi-bicycle display-6 d-block mb-2"></i> Nenhum pedido delivery registrado.
+                        </td>
+                    </tr>
+                    <tr th:each="p : ${pedidos}">
+                        <td>
+                            <span th:if="${p.plataforma.name() == 'IFOOD'}" class="badge bg-danger px-2 py-1 fs-6">
+                                <i class="bi bi-bag-heart-fill"></i> iFood
+                            </span>
+                            <span th:if="${p.plataforma.name() == 'NOVENOVE_FOOD'}" class="badge bg-warning text-dark px-2 py-1 fs-6">
+                                <i class="bi bi-lightning-charge-fill"></i> 99Food
+                            </span>
+                            <span th:if="${p.plataforma.name() == 'WHATSAPP'}" class="badge bg-success px-2 py-1 fs-6">
+                                <i class="bi bi-whatsapp"></i> Whats
+                            </span>
+                            <span th:if="${p.plataforma.name() == 'PROPRIO'}" class="badge bg-secondary px-2 py-1 fs-6">
+                                <i class="bi bi-shop"></i> Próprio
+                            </span>
+                        </td>
+                        <td>
+                            <strong class="font-monospace text-dark" th:text="${p.codigoPedido}"></strong>
+                            <div class="small text-muted" th:text="${#temporals.format(p.dataHora, 'HH:mm')}"></div>
+                        </td>
+                        <td>
+                            <div class="fw-bold" th:text="${p.clienteNome}"></div>
+                            <div class="small text-muted" th:text="${p.clienteTelefone}"></div>
+                        </td>
+                        <td>
+                            <div class="small" th:text="${p.enderecoEntrega}"></div>
+                            <div th:if="${p.observacao != null && p.observacao != ''}" 
+                                 class="small text-danger fst-italic mt-1" th:text="'Obs: ' + ${p.observacao}"></div>
+                        </td>
+                        <td>
+                            <div class="small text-truncate" style="max-width: 220px;" th:text="${p.itensDescricao}"></div>
+                        </td>
+                        <td class="text-end fw-bold text-success">
+                            R$ <span th:text="${#numbers.formatDecimal(p.valorTotal + p.taxaEntrega, 1, 'POINT', 2, 'COMMA')}"></span>
+                        </td>
+                        <td>
+                            <span th:if="${p.status.name() == 'NOVO'}" class="badge bg-warning text-dark">NOVO</span>
+                            <span th:if="${p.status.name() == 'EM_PREPARO'}" class="badge bg-info text-dark">EM PREPARO</span>
+                            <span th:if="${p.status.name() == 'SAIU_PARA_ENTREGA'}" class="badge bg-primary">EM ROTA</span>
+                            <span th:if="${p.status.name() == 'ENTREGUE'}" class="badge bg-success">ENTREGUE</span>
+                            <span th:if="${p.status.name() == 'CANCELADO'}" class="badge bg-danger">CANCELADO</span>
+                        </td>
+                        <td>
+                            <div th:if="${p.motoboy != null}">
+                                <div class="fw-bold small text-dark"><i class="bi bi-person-fill"></i> <span th:text="${p.motoboy.nome}"></span></div>
+                                <div class="small text-muted" th:text="${p.motoboy.placaMoto}"></div>
+                                <!-- DESTAQUE DA MÁQUINA DE CARTÃO -->
+                                <div class="mt-1">
+                                    <span th:if="${p.saiuComMaquina}" class="badge bg-success" title="Motoboy saiu com a máquina de cartão">
+                                        <i class="bi bi-credit-card-fill"></i> Com Máquina
+                                    </span>
+                                    <span th:if="${!p.saiuComMaquina}" class="badge bg-light text-muted border" title="Motoboy não levou máquina">
+                                        Sem Máquina
+                                    </span>
+                                </div>
+                            </div>
+                            <div th:if="${p.motoboy == null}" class="text-muted small fst-italic">
+                                Não atribuído
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group-vertical btn-group-sm w-100">
+                                <!-- Botão para Iniciar Preparo -->
+                                <form th:if="${p.status.name() == 'NOVO'}" th:action="@{'/delivery/' + ${p.id} + '/status'}" method="post">
+                                    <input type="hidden" name="status" value="EM_PREPARO">
+                                    <button type="submit" class="btn btn-outline-info btn-sm w-100 mb-1">
+                                        <i class="bi bi-fire"></i> Preparar
+                                    </button>
+                                </form>
+
+                                <!-- Botão para Despachar com Motoboy -->
+                                <button th:if="${p.status.name() == 'NOVO' || p.status.name() == 'EM_PREPARO'}" 
+                                        type="button" class="btn btn-primary btn-sm w-100 mb-1" 
+                                        data-bs-toggle="modal" th:data-bs-target="'#modalDespachar' + ${p.id}">
+                                    <i class="bi bi-send-fill"></i> Despachar
+                                </button>
+
+                                <!-- Botão para Concluir Entrega -->
+                                <form th:if="${p.status.name() == 'SAIU_PARA_ENTREGA'}" th:action="@{'/delivery/' + ${p.id} + '/status'}" method="post">
+                                    <input type="hidden" name="status" value="ENTREGUE">
+                                    <button type="submit" class="btn btn-success btn-sm w-100">
+                                        <i class="bi bi-check2-circle"></i> Entregue
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- MODAL DE DESPACHO PARA ESTE PEDIDO -->
+                            <div class="modal fade" th:id="'modalDespachar' + ${p.id}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered text-start">
+                                    <div class="modal-content border-0 shadow bg-body">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h6 class="modal-title fw-bold">
+                                                <i class="bi bi-bicycle me-1"></i> Despachar Pedido #<span th:text="${p.codigoPedido}"></span>
+                                            </h6>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form th:action="@{'/delivery/' + ${p.id} + '/despachar'}" method="post">
+                                            <div class="modal-body p-4">
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">Selecione o Motoboy de Entrega *</label>
+                                                    <select class="form-select form-select-lg" name="motoboyId" required>
+                                                        <option value="">Selecione um motoboy disponível...</option>
+                                                        <option th:each="m : ${motoboys}" th:value="${m.id}" 
+                                                                th:text="${m.nome} + ' (Placa: ' + ${m.placaMoto} + ')'">
+                                                        </option>
+                                                    </select>
+                                                </div>
+
+                                                <!-- CHECKBOX MÁQUINA DE CARTÃO -->
+                                                <div class="p-3 border rounded-3 bg-body-tertiary mb-3">
+                                                    <div class="form-check form-switch fs-5">
+                                                        <input class="form-check-input" type="checkbox" role="switch" th:id="'saiuComMaquina' + ${p.id}" name="saiuComMaquina" value="true" checked>
+                                                        <label class="form-check-label fw-bold text-primary" th:for="'saiuComMaquina' + ${p.id}">
+                                                            <i class="bi bi-credit-card-2-front-fill me-1"></i> Saiu com Máquina de Cartão?
+                                                        </label>
+                                                    </div>
+                                                    <div class="text-muted small mt-1">
+                                                        Marque esta opção caso o entregador esteja levando uma máquina de cartão portátil para cobrança no local.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-primary fw-bold">
+                                                    <i class="bi bi-check-lg"></i> Confirmar Saída para Entrega
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<!-- MODAL CADASTRAR NOVO PEDIDO MANUAL (iFood/99Food/WhatsApp) -->
+<div class="modal fade" id="modalNovoPedido" tabindex="-1" aria-labelledby="modalNovoPedidoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg bg-body">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold" id="modalNovoPedidoLabel">
+                    <i class="bi bi-plus-circle me-1"></i> Registrar Pedido Delivery Manual
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{/delivery/salvar}" th:object="${novoPedido}" method="post">
+                <div class="modal-body p-4">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="plataforma" class="form-label fw-bold">Origem / Plataforma *</label>
+                            <select class="form-select" id="plataforma" th:field="*{plataforma}" required>
+                                <option th:each="plt : ${plataformas}" th:value="${plt}" th:text="${plt.descricao}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="codigoPedido" class="form-label fw-bold">Código do Pedido no App</label>
+                            <input type="text" class="form-control font-monospace" id="codigoPedido" th:field="*{codigoPedido}" placeholder="Ex: IF-9923 (Deixe vazio para gerar)">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="clienteNome" class="form-label fw-bold">Nome do Cliente *</label>
+                            <input type="text" class="form-control" id="clienteNome" th:field="*{clienteNome}" required placeholder="Ex: Maria Fernandes">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="clienteTelefone" class="form-label fw-bold">Telefone / WhatsApp</label>
+                            <input type="text" class="form-control" id="clienteTelefone" th:field="*{clienteTelefone}" placeholder="(11) 99999-8888">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="enderecoEntrega" class="form-label fw-bold">Endereço Completo de Entrega *</label>
+                        <input type="text" class="form-control" id="enderecoEntrega" th:field="*{enderecoEntrega}" required placeholder="Rua, Número, Bairro, Apto / Ponto de Referência">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="itensDescricao" class="form-label fw-bold">Descrição dos Itens do Pedido *</label>
+                        <textarea class="form-control" id="itensDescricao" th:field="*{itensDescricao}" rows="2" required placeholder="Ex: 2x Coca-Cola Lata 350ml, 1x Salgado Assado"></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label for="valorTotal" class="form-label fw-bold">Valor dos Produtos (R$) *</label>
+                            <input type="number" step="0.01" min="0.01" class="form-control fw-bold" id="valorTotal" th:field="*{valorTotal}" required placeholder="0,00">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="taxaEntrega" class="form-label fw-bold">Taxa de Entrega (R$)</label>
+                            <input type="number" step="0.01" min="0.00" class="form-control" id="taxaEntrega" th:field="*{taxaEntrega}" value="5.00">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="formaPagamento" class="form-label fw-bold">Forma de Pagamento</label>
+                            <select class="form-select" id="formaPagamento" th:field="*{formaPagamento}">
+                                <option value="Pago pelo App">Pago pelo App</option>
+                                <option value="Cartão de Crédito na Entrega">Cartão de Crédito na Entrega</option>
+                                <option value="Cartão de Débito na Entrega">Cartão de Débito na Entrega</option>
+                                <option value="Dinheiro na Entrega">Dinheiro na Entrega</option>
+                                <option value="PIX na Entrega">PIX na Entrega</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="observacao" class="form-label fw-semibold">Observações / Troco</label>
+                        <input type="text" class="form-control" id="observacao" th:field="*{observacao}" placeholder="Ex: Troco para R$ 50,00 / Tocar interfone 34">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success fw-bold px-4">
+                        <i class="bi bi-save me-1"></i> Salvar Pedido Delivery
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

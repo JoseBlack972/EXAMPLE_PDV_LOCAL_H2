@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Cadastro e Gestão de Motoboys')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-body-tertiary">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container py-4 flex-grow-1">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold mb-1">
+                <i class="bi bi-person-badge-fill text-primary me-1"></i> Cadastro de Motoboys
+            </h3>
+            <p class="text-muted small mb-0">Gerencie a equipe de entregadores para despacho com máquina de cartão</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a th:href="@{/delivery}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar ao Painel Delivery
+            </a>
+            <button type="button" class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNovoMotoboy">
+                <i class="bi bi-plus-circle me-1"></i> Novo Motoboy
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden bg-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 5%;">#</th>
+                        <th style="width: 35%;">Nome do Entregador</th>
+                        <th style="width: 25%;">Telefone de Contato</th>
+                        <th style="width: 15%;">Placa do Veículo</th>
+                        <th style="width: 10%;">Status</th>
+                        <th style="width: 10%;" class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(motoboys)}">
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-person-x display-6 d-block mb-2"></i> Nenhum motoboy cadastrado.
+                        </td>
+                    </tr>
+                    <tr th:each="m, stat : ${motoboys}">
+                        <td th:text="${stat.count}" class="text-muted small"></td>
+                        <td>
+                            <i class="bi bi-person-circle text-primary me-2 fs-5"></i>
+                            <strong th:text="${m.nome}"></strong>
+                        </td>
+                        <td>
+                            <i class="bi bi-telephone text-muted me-1"></i>
+                            <span th:text="${m.telefone}"></span>
+                        </td>
+                        <td>
+                            <code class="fw-bold text-dark" th:text="${m.placaMoto}"></code>
+                        </td>
+                        <td>
+                            <span th:if="${m.ativo}" class="badge bg-success">Disponível</span>
+                            <span th:if="${!m.ativo}" class="badge bg-secondary">Inativo</span>
+                        </td>
+                        <td class="text-center">
+                            <a th:href="@{'/delivery/motoboys/' + ${m.id} + '/status'}" 
+                               class="btn btn-sm" th:classappend="${m.ativo ? 'btn-outline-danger' : 'btn-outline-success'}"
+                               th:title="${m.ativo ? 'Desativar motoboy' : 'Ativar motoboy'}">
+                                <i class="bi" th:classappend="${m.ativo ? 'bi-person-slash' : 'bi-person-check'}"></i>
+                                <span th:text="${m.ativo ? 'Desativar' : 'Ativar'}"></span>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<!-- MODAL CADASTRAR NOVO MOTOBOY -->
+<div class="modal fade" id="modalNovoMotoboy" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow bg-body">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-person-plus-fill me-1"></i> Cadastrar Novo Motoboy
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{/delivery/motoboys/salvar}" th:object="${novoMotoboy}" method="post">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="nome" class="form-label fw-bold">Nome Completo do Motoboy *</label>
+                        <input type="text" class="form-control form-control-lg" id="nome" th:field="*{nome}" required placeholder="Ex: Roberto Ferreira">
+                    </div>
+                    <div class="mb-3">
+                        <label for="telefone" class="form-label fw-bold">Telefone / WhatsApp *</label>
+                        <input type="text" class="form-control" id="telefone" th:field="*{telefone}" required placeholder="(11) 98765-4321">
+                    </div>
+                    <div class="mb-3">
+                        <label for="placaMoto" class="form-label fw-bold">Placa da Moto / Veículo</label>
+                        <input type="text" class="form-control font-monospace" id="placaMoto" th:field="*{placaMoto}" placeholder="Ex: BRA-2E19">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold px-4">
+                        <i class="bi bi-save me-1"></i> Salvar Motoboy
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

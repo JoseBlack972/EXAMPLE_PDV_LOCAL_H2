@@ -1,0 +1,38 @@
+databases:
+  - name: example-pdv-postgres
+    databaseName: pdvdb
+    user: pdv_user
+    plan: free
+
+services:
+  - type: web
+    name: example-pdv-app
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /login
+    envVars:
+      - key: TZ
+        value: America/Sao_Paulo
+      - key: JAVA_OPTS
+        value: -Xms128m -Xmx320m -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError
+      - key: DATABASE_HOST
+        fromDatabase:
+          name: example-pdv-postgres
+          property: host
+      - key: DATABASE_PORT
+        fromDatabase:
+          name: example-pdv-postgres
+          property: port
+      - key: DATABASE_NAME
+        fromDatabase:
+          name: example-pdv-postgres
+          property: database
+      - key: DATABASE_USERNAME
+        fromDatabase:
+          name: example-pdv-postgres
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: example-pdv-postgres
+          property: password

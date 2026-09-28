@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Histórico de Vendas')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-body-tertiary">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container-fluid px-4 py-4 flex-grow-1">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold mb-1"><i class="bi bi-receipt text-primary"></i> Histórico Geral de Vendas</h3>
+            <p class="text-muted small mb-0">Relação completa de vendas emitidas, identificação de caixas e operadores</p>
+        </div>
+        <div>
+            <a th:href="@{/pdv}" class="btn btn-success fw-bold shadow-sm">
+                <i class="bi bi-cart-plus me-1"></i> Nova Venda no PDV
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 8%;"># Venda</th>
+                        <th style="width: 15%;">Data / Hora</th>
+                        <th style="width: 17%;">Operador Responsável</th>
+                        <th style="width: 15%;">Caixa de Origem</th>
+                        <th style="width: 13%;">CPF / CNPJ</th>
+                        <th style="width: 12%;">Forma Pagto</th>
+                        <th style="width: 10%;" class="text-end">Total</th>
+                        <th style="width: 10%;" class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(vendas)}">
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-receipt-cutoff display-6 d-block mb-2"></i> Nenhuma venda registrada no sistema.
+                        </td>
+                    </tr>
+                    <tr th:each="v : ${vendas}">
+                        <td><strong class="text-primary fs-6">#<span th:text="${v.id}"></span></strong></td>
+                        <td class="small" th:text="${#temporals.format(v.dataHora, 'dd/MM/yyyy HH:mm:ss')}"></td>
+                        <td>
+                            <i class="bi bi-person-fill text-secondary me-1"></i>
+                            <strong th:text="${v.usuario.nome}"></strong>
+                            <div class="small text-muted">Login: <code>@<span th:text="${v.usuario.username}"></span></code></div>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">Caixa #<span th:text="${v.caixa.id}"></span></span>
+                            <div class="small text-muted" th:text="'Aberto em: ' + ${#temporals.format(v.caixa.dataAbertura, 'dd/MM/yyyy HH:mm')}"></div>
+                        </td>
+                        <td>
+                            <span th:if="${v.cpfCnpj != null && v.cpfCnpj != ''}" class="font-monospace small fw-bold text-dark" th:text="${v.cpfCnpj}"></span>
+                            <span th:if="${v.cpfCnpj == null || v.cpfCnpj == ''}" class="text-muted small fst-italic">Não informado</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info text-dark" th:text="${v.formaPagamento.descricao}"></span>
+                        </td>
+                        <td class="text-end fw-bold text-success fs-6">
+                            R$ <span th:text="${#numbers.formatDecimal(v.valorTotal, 1, 'POINT', 2, 'COMMA')}"></span>
+                        </td>
+                        <td class="text-center">
+                            <a th:href="@{'/vendas/' + ${v.id}}" class="btn btn-outline-primary btn-sm fw-bold">
+                                <i class="bi bi-printer"></i> DANFE NFC-e
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

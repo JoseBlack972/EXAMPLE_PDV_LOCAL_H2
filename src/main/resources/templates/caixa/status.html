@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Controle de Caixa')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-light">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container py-4 flex-grow-1">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1"><i class="bi bi-cash-stack text-success"></i> Gestão do Caixa</h3>
+            <p class="text-muted small mb-0">Controle financeiro, entradas, saídas e fechamento diário</p>
+        </div>
+        <div th:if="${caixa != null}" class="d-flex gap-2">
+            <a th:href="@{/caixa/movimento}" class="btn btn-outline-primary fw-bold">
+                <i class="bi bi-arrow-left-right me-1"></i> Sangria / Suprimento
+            </a>
+            <a th:href="@{/caixa/fechamento}" class="btn btn-danger fw-bold">
+                <i class="bi bi-lock me-1"></i> Fechar Caixa
+            </a>
+        </div>
+        <div th:if="${caixa == null}">
+            <a th:href="@{/caixa/abertura}" class="btn btn-success fw-bold">
+                <i class="bi bi-unlock me-1"></i> Abrir Novo Caixa
+            </a>
+        </div>
+    </div>
+
+    <!-- CAIXA FECHADO -->
+    <div th:if="${caixa == null}" class="card shadow-sm border-0 p-5 text-center rounded-4">
+        <i class="bi bi-shield-slash text-muted display-3 mb-3"></i>
+        <h4 class="fw-bold text-secondary">Nenhum Caixa Aberto</h4>
+        <p class="text-muted">Abra o caixa para iniciar as operações financeiras e permitir vendas no PDV.</p>
+        <div class="mt-2">
+            <a th:href="@{/caixa/abertura}" class="btn btn-primary px-4 py-2">
+                <i class="bi bi-unlock-fill me-1"></i> Abrir Caixa
+            </a>
+        </div>
+    </div>
+
+    <!-- CAIXA ABERTO -->
+    <div th:if="${caixa != null}">
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 bg-white p-3">
+                    <div class="text-muted small text-uppercase">Saldo Inicial</div>
+                    <h4 class="fw-bold text-primary mb-0">
+                        R$ <span th:text="${#numbers.formatDecimal(caixa.saldoInicial, 1, 'POINT', 2, 'COMMA')}"></span>
+                    </h4>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 bg-white p-3">
+                    <div class="text-muted small text-uppercase">Vendas em Dinheiro</div>
+                    <h4 class="fw-bold text-success mb-0">
+                        R$ <span th:text="${#numbers.formatDecimal(caixa.totalVendasDinheiro, 1, 'POINT', 2, 'COMMA')}"></span>
+                    </h4>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 bg-white p-3">
+                    <div class="text-muted small text-uppercase">Cartões & PIX</div>
+                    <h4 class="fw-bold text-info mb-0">
+                        R$ <span th:text="${#numbers.formatDecimal(caixa.totalVendasCartoesEPix, 1, 'POINT', 2, 'COMMA')}"></span>
+                    </h4>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 bg-dark text-white p-3">
+                    <div class="text-white-50 small text-uppercase">Saldo Dinheiro em Gaveta</div>
+                    <h4 class="fw-bold text-warning mb-0">
+                        R$ <span th:text="${#numbers.formatDecimal(caixa.saldoDinheiroEsperado, 1, 'POINT', 2, 'COMMA')}"></span>
+                    </h4>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTÓRICO DE MOVIMENTAÇÕES -->
+        <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+            <div class="card-header bg-white py-3">
+                <h6 class="fw-bold m-0"><i class="bi bi-list-ul text-primary"></i> Movimentações do Caixa Atual</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Data / Hora</th>
+                            <th>Tipo de Movimento</th>
+                            <th>Motivo / Descrição</th>
+                            <th class="text-end">Valor (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${#lists.isEmpty(movimentos)}">
+                            <td colspan="4" class="text-center py-4 text-muted">Nenhuma movimentação registrada neste caixa ainda.</td>
+                        </tr>
+                        <tr th:each="m : ${movimentos}">
+                            <td th:text="${#temporals.format(m.dataHora, 'dd/MM/yyyy HH:mm:ss')}"></td>
+                            <td>
+                                <span th:if="${m.tipo.name() == 'SUPRIMENTO'}" class="badge bg-success">SUPRIMENTO / APORTE</span>
+                                <span th:if="${m.tipo.name() == 'SANGRIA'}" class="badge bg-danger">SANGRIA / RETIRADA</span>
+                                <span th:if="${m.tipo.name() == 'VENDA'}" class="badge bg-primary">VENDA PDV</span>
+                            </td>
+                            <td th:text="${m.motivo}"></td>
+                            <td class="text-end fw-bold" th:classappend="${m.tipo.name() == 'SANGRIA' ? 'text-danger' : 'text-success'}">
+                                <span th:if="${m.tipo.name() == 'SANGRIA'}">-</span>
+                                R$ <span th:text="${#numbers.formatDecimal(m.valor, 1, 'POINT', 2, 'COMMA')}"></span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

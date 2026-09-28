@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Portal do Gestor - Relatórios & Tempo Real')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-body-tertiary">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container-fluid px-3 py-3 flex-grow-1">
+
+    <!-- CABEÇALHO DO PORTAL DO GESTOR -->
+    <div class="card shadow-sm border-0 mb-3 bg-body">
+        <div class="card-body py-2 px-3 d-flex flex-wrap justify-content-between align-items-center">
+            <div>
+                <h4 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-graph-up-arrow text-success me-2"></i> Portal de Gestão & Relatórios
+                </h4>
+                <span class="text-muted small">
+                    Visão executiva em tempo real e relatórios consolidados por Dia, Semana e Mês.
+                </span>
+            </div>
+            <div class="d-flex align-items-center gap-2 my-1">
+                <span class="badge bg-secondary-subtle text-secondary border px-3 py-2 small">
+                    <i class="bi bi-building me-1"></i> <strong th:text="${empresa.nomeFantasia}"></strong> (CNPJ: <span th:text="${empresa.cnpj}"></span>)
+                </span>
+                <a th:href="@{/produtos/importar-csv}" class="btn btn-outline-success btn-sm fw-bold shadow-sm">
+                    <i class="bi bi-file-earmark-spreadsheet me-1"></i> Importar Estoque (CSV)
+                </a>
+                <a th:href="@{/gestao/identidade-visual}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm">
+                    <i class="bi bi-brush me-1"></i> Personalizar Logo & Ícone
+                </a>
+                <a th:href="@{/gestao/imprimir(periodo=${periodo}, tipo=${tipo}, dataInicio=${dataInicio}, dataFim=${dataFim})}" target="_blank" class="btn btn-success btn-sm fw-bold shadow-sm">
+                    <i class="bi bi-printer-fill me-1"></i> Imprimir Relatório Atual
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 1: MONITORAMENTO EM TEMPO REAL DO CAIXA DO PDV -->
+    <div class="card shadow-sm border-0 mb-3 bg-body">
+        <div class="card-header bg-transparent py-2 px-3 d-flex justify-content-between align-items-center border-bottom">
+            <div class="d-flex align-items-center gap-2">
+                <span class="spinner-grow spinner-grow-sm text-danger" role="status" aria-hidden="true" th:if="${tempoReal.temCaixaAberto}"></span>
+                <h6 class="fw-bold m-0 text-dark">
+                    <i class="bi bi-broadcast text-danger me-1"></i> Monitor em Tempo Real do Caixa do PDV
+                </h6>
+                <span class="badge bg-success" th:if="${tempoReal.temCaixaAberto}">
+                    CAIXA #<span th:text="${tempoReal.caixaId}"></span> ABERTO
+                </span>
+                <span class="badge bg-secondary" th:unless="${tempoReal.temCaixaAberto}">
+                    NENHUM CAIXA ABERTO NO MOMENTO
+                </span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="form-check form-switch m-0 small">
+                    <input class="form-check-input" type="checkbox" id="checkAutoRefresh" checked>
+                    <label class="form-check-label text-muted small" for="checkAutoRefresh">Atualização Automática (10s)</label>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm shadow-sm" id="btnRecarregarTempoReal">
+                    <i class="bi bi-arrow-clockwise"></i> Atualizar Agora
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body p-3">
+            <!-- SE O CAIXA ESTIVER ABERTO -->
+            <div th:if="${tempoReal.temCaixaAberto}">
+                <div class="row g-2 mb-3">
+                    <!-- Operador e Abertura -->
+                    <div class="col-md-3 col-sm-6">
+                        <div class="p-2 border rounded-2 bg-light-subtle h-100">
+                            <span class="text-muted small d-block">Operador do Caixa:</span>
+                            <strong class="text-dark fs-6" id="trOperador" th:text="${tempoReal.operadorNome}"></strong>
+                            <div class="text-muted small mt-1">
+                                Abertura: <span id="trDataAbertura" th:text="${#temporals.format(tempoReal.dataAbertura, 'dd/MM/yyyy HH:mm')}"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fundo de Troco -->
+                    <div class="col-md-2 col-sm-6">
+                        <div class="p-2 border rounded-2 bg-light-subtle h-100">
+                            <span class="text-muted small d-block">Fundo Inicial (Troco):</span>
+                            <strong class="text-primary fs-5" id="trSaldoInicial" th:text="'R$ ' + ${#numbers.formatDecimal(tempoReal.saldoInicial, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                            <div class="text-muted small mt-1">Gaveta inicial</div>
+                        </div>
+                    </div>
+
+                    <!-- Total Vendido no Caixa -->
+                    <div class="col-md-2 col-sm-6">
+                        <div class="p-2 border rounded-2 bg-success-subtle border-success-subtle h-100">
+                            <span class="text-success-emphasis small d-block">Total Faturado no Caixa:</span>
+                            <strong class="text-success fs-5" id="trTotalVendido" th:text="'R$ ' + ${#numbers.formatDecimal(tempoReal.totalVendido, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                            <div class="text-muted small mt-1">
+                                <span id="trQtdVendas" th:text="${tempoReal.quantidadeVendas}">0</span> vendas concluídas
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Saldo Estimado na Gaveta -->
+                    <div class="col-md-3 col-sm-6">
+                        <div class="p-2 border rounded-2 bg-warning-subtle border-warning-subtle h-100">
+                            <span class="text-warning-emphasis small d-block">Dinheiro Estimado em Gaveta:</span>
+                            <strong class="text-dark fs-5" id="trSaldoGaveta" th:text="'R$ ' + ${#numbers.formatDecimal(tempoReal.saldoGavetaEstimado, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                            <div class="text-muted small mt-1" style="font-size: 0.72rem;">
+                                Inicial + Vendas Dinheiro + Suprim. - Sangrias
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ticket Médio -->
+                    <div class="col-md-2 col-sm-6">
+                        <div class="p-2 border rounded-2 bg-light-subtle h-100">
+                            <span class="text-muted small d-block">Ticket Médio:</span>
+                            <strong class="text-info-emphasis fs-5" id="trTicketMedio" th:text="'R$ ' + ${#numbers.formatDecimal(tempoReal.ticketMedio, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                            <div class="text-muted small mt-1">Média por cliente</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalhamento por Forma de Pagamento e Sangrias -->
+                <div class="row g-2 mb-3">
+                    <div class="col-lg-8">
+                        <div class="border rounded-2 p-2 bg-light-subtle">
+                            <span class="fw-bold small d-block mb-1 text-dark"><i class="bi bi-wallet2 text-primary me-1"></i> Faturamento por Forma de Pagamento (Caixa Atual):</span>
+                            <div class="row text-center g-1">
+                                <div class="col-3">
+                                    <div class="p-1 border rounded bg-white">
+                                        <div class="text-muted small" style="font-size: 0.72rem;">DINHEIRO</div>
+                                        <strong class="text-success small" id="trDinheiro" th:text="'R$ ' + ${#numbers.formatDecimal(tempoReal.totalDinheiro, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="p-1 border rounded bg-white">
+                                        <div class="text-muted small" style="font-size: 0.72rem;">PIX</div>
+                                        <strong class="text-primary small" id="trPix" th:text="'R$ ' + ${#numbers.formatDecimal(tempoReal.totalPix, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="p-1 border rounded bg-white">
+                                        <div class="text-muted small" style="font-size: 0.72rem;">DÉBITO</div>
+                                        <strong class="text-dark small" id="trDebito" th:text="'R$ ' + ${#numbers.formatDecimal(tempoReal.totalDebito, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="p-1 border rounded bg-white">
+                                        <div class="text-muted small" style="font-size: 0.72rem;">CRÉDITO</div>
+                                        <strong class="text-dark small" id="trCredito" th:text="'R$ ' + ${#numbers.formatDecimal(tempoReal.totalCredito, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="border rounded-2 p-2 bg-light-subtle h-100 d-flex flex-column justify-content-center">
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span class="text-danger fw-semibold"><i class="bi bi-arrow-up-circle"></i> Sangrias (Retiradas):</span>
+                                <strong class="text-danger" id="trSangrias" th:text="'R$ ' + ${#numbers.formatDecimal(tempoReal.totalSangrias, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                            </div>
+                            <div class="d-flex justify-content-between small">
+                                <span class="text-success fw-semibold"><i class="bi bi-arrow-down-circle"></i> Suprimentos (Entradas):</span>
+                                <strong class="text-success" id="trSuprimentos" th:text="'R$ ' + ${#numbers.formatDecimal(tempoReal.totalSuprimentos, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabela das Últimas Vendas do Caixa Atual -->
+                <div class="border rounded-2">
+                    <div class="bg-light px-3 py-1.5 border-bottom d-flex justify-content-between align-items-center">
+                        <span class="fw-bold small text-dark"><i class="bi bi-clock-history text-primary me-1"></i> Últimas Vendas Registradas em Tempo Real</span>
+                        <span class="badge bg-secondary" id="trBadgeQtdVendas" th:text="${#lists.size(tempoReal.ultimasVendas)} + ' recentes'"></span>
+                    </div>
+                    <div class="table-responsive" style="max-height: 180px; overflow-y: auto;">
+                        <table class="table table-sm table-hover align-middle mb-0" id="tabelaTempoRealVendas">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th># NFC-e</th>
+                                    <th>Data / Hora</th>
+                                    <th>Operador</th>
+                                    <th class="text-center">Qtd Itens</th>
+                                    <th>Forma Pagamento</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpoTempoRealVendas">
+                                <tr th:if="${#lists.isEmpty(tempoReal.ultimasVendas)}">
+                                    <td colspan="6" class="text-center py-3 text-muted">Nenhuma venda registrada neste caixa ainda.</td>
+                                </tr>
+                                <tr th:each="uv : ${tempoReal.ultimasVendas}">
+                                    <td><code th:text="'#' + ${uv.id}"></code></td>
+                                    <td th:text="${#temporals.format(uv.dataHora, 'HH:mm:ss')}"></td>
+                                    <td th:text="${uv.operador}"></td>
+                                    <td class="text-center"><span class="badge bg-light text-dark border" th:text="${uv.quantidadeItens} + ' itens'"></span></td>
+                                    <td th:text="${uv.formaPagamento}"></td>
+                                    <td class="text-end fw-bold text-success" th:text="'R$ ' + ${#numbers.formatDecimal(uv.total, 1, 'POINT', 2, 'COMMA')}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SE NÃO HOUVER CAIXA ABERTO -->
+            <div th:unless="${tempoReal.temCaixaAberto}" class="text-center py-4">
+                <i class="bi bi-inbox text-muted display-5 d-block mb-2"></i>
+                <h6 class="fw-bold text-secondary">Nenhum Caixa Aberto no Momento</h6>
+                <p class="text-muted small mb-0">Quando um operador abrir o caixa no PDV e iniciar as vendas, os indicadores e gráficos serão atualizados em tempo real nesta área.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 2: GERADOR DE RELATÓRIOS (DIA, SEMANA, MÊS, PERSONALIZADO) -->
+    <div class="card shadow-sm border-0 mb-3 bg-body">
+        <div class="card-header bg-transparent py-2 px-3 border-bottom">
+            <h5 class="fw-bold m-0 text-dark"><i class="bi bi-funnel-fill text-primary me-2"></i> Gerador de Relatórios de Gestão</h5>
+        </div>
+        <div class="card-body p-3">
+            <form th:action="@{/gestao}" method="get" id="formRelatorio">
+                <div class="row g-2 align-items-end">
+                    <!-- SELETOR DE PERÍODO -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small mb-1">Período de Apuração:</label>
+                        <select class="form-select form-select-sm" name="periodo" id="selectPeriodo" onchange="alternarCamposDatas(this.value)">
+                            <option value="HOJE" th:selected="${periodo == 'HOJE'}">📅 Hoje (Dia Atual)</option>
+                            <option value="SEMANA" th:selected="${periodo == 'SEMANA'}">📆 Esta Semana (Últimos 7 dias)</option>
+                            <option value="MES" th:selected="${periodo == 'MES'}">🗓️ Este Mês (Mês Atual)</option>
+                            <option value="PERSONALIZADO" th:selected="${periodo == 'PERSONALIZADO'}">🎯 Período Personalizado...</option>
+                        </select>
+                    </div>
+
+                    <!-- DATAS PERSONALIZADAS (SE SELECIONADO) -->
+                    <div class="col-md-2" id="divDataInicio" th:style="${periodo == 'PERSONALIZADO' ? '' : 'display: none;'}">
+                        <label class="form-label fw-bold small mb-1">Data Início:</label>
+                        <input type="date" class="form-control form-control-sm" name="dataInicio" th:value="${dataInicio}">
+                    </div>
+                    <div class="col-md-2" id="divDataFim" th:style="${periodo == 'PERSONALIZADO' ? '' : 'display: none;'}">
+                        <label class="form-label fw-bold small mb-1">Data Fim:</label>
+                        <input type="date" class="form-control form-control-sm" name="dataFim" th:value="${dataFim}">
+                    </div>
+
+                    <!-- TIPO DE RELATÓRIO -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small mb-1">Tipo de Relatório:</label>
+                        <select class="form-select form-select-sm" name="tipo">
+                            <option value="CONSOLIDADO" th:selected="${tipo == 'CONSOLIDADO'}">📑 Relatório Consolidado (Tudo Junto - Executivo)</option>
+                            <option value="VENDAS" th:selected="${tipo == 'VENDAS'}">💰 Relatório de Vendas Geral</option>
+                            <option value="HORARIOS" th:selected="${tipo == 'HORARIOS'}">⏰ Relatório de Vendas por Horário (Pico)</option>
+                            <option value="POR_CAIXA" th:selected="${tipo == 'POR_CAIXA'}">🖥️ Relatório de Vendas por Caixa</option>
+                            <option value="POR_DIA" th:selected="${tipo == 'POR_DIA'}">📈 Relatório de Vendas por Dia (Evolução)</option>
+                            <option value="CAIXA" th:selected="${tipo == 'CAIXA'}">🏦 Relatório de Caixas & Movimentações</option>
+                            <option value="ESTOQUE" th:selected="${tipo == 'ESTOQUE'}">📦 Relatório de Estoque & Reposição</option>
+                        </select>
+                    </div>
+
+                    <!-- BOTÕES -->
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm fw-bold w-100 shadow-sm">
+                            <i class="bi bi-filter"></i> Gerar
+                        </button>
+                        <a th:href="@{/gestao/imprimir(periodo=${periodo}, tipo=${tipo}, dataInicio=${dataInicio}, dataFim=${dataFim})}" 
+                           target="_blank" class="btn btn-outline-success btn-sm fw-bold shadow-sm" title="Imprimir Relatório Formatado">
+                            <i class="bi bi-printer"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 3: EXIBIÇÃO DO RELATÓRIO GERADO -->
+    <div class="card shadow-sm border-0 mb-4 bg-body">
+        <div class="card-header bg-transparent py-2 px-3 d-flex justify-content-between align-items-center border-bottom">
+            <div>
+                <h5 class="fw-bold m-0 text-dark">
+                    <span th:if="${tipo == 'CONSOLIDADO'}"><i class="bi bi-file-earmark-text text-primary me-2"></i> Relatório Consolidado Geral</span>
+                    <span th:if="${tipo == 'VENDAS'}"><i class="bi bi-cash-stack text-success me-2"></i> Relatório Completo de Vendas</span>
+                    <span th:if="${tipo == 'HORARIOS'}"><i class="bi bi-clock-history text-info me-2"></i> Relatório de Vendas por Faixa de Horário</span>
+                    <span th:if="${tipo == 'POR_CAIXA'}"><i class="bi bi-pc-display text-warning me-2"></i> Relatório de Vendas por Caixa</span>
+                    <span th:if="${tipo == 'POR_DIA'}"><i class="bi bi-calendar3 text-primary me-2"></i> Relatório de Evolução Diária</span>
+                    <span th:if="${tipo == 'CAIXA'}"><i class="bi bi-bank text-danger me-2"></i> Relatório de Caixas e Movimentações</span>
+                    <span th:if="${tipo == 'ESTOQUE'}"><i class="bi bi-box-seam text-secondary me-2"></i> Relatório de Estoque e Posição Atual</span>
+                </h5>
+                <span class="text-muted small">
+                    Período: <strong th:text="${relatorio.periodo}"></strong> | 
+                    Data de Emissão: <span th:text="${#temporals.format(relatorio.dataHoraGeracao, 'dd/MM/yyyy HH:mm:ss')}"></span> | 
+                    Gestor: <span th:text="${relatorio.gestorNome}"></span>
+                </span>
+            </div>
+            <a th:href="@{/gestao/imprimir(periodo=${periodo}, tipo=${tipo}, dataInicio=${dataInicio}, dataFim=${dataFim})}" 
+               target="_blank" class="btn btn-success btn-sm fw-bold shadow">
+                <i class="bi bi-printer-fill me-1"></i> Imprimir em A4
+            </a>
+        </div>
+
+        <div class="card-body p-3">
+            <!-- CARDS RESUMO EXECUTIVO (APARECE EM CONSOLIDADO E VENDAS) -->
+            <div th:if="${tipo == 'CONSOLIDADO' || tipo == 'VENDAS' || tipo == 'HORARIOS' || tipo == 'POR_CAIXA' || tipo == 'POR_DIA'}" class="row g-2 mb-3">
+                <div class="col-md-3 col-sm-6">
+                    <div class="border rounded p-2 bg-success-subtle text-success-emphasis">
+                        <span class="small d-block">Faturamento Total do Período:</span>
+                        <h4 class="fw-bold m-0 text-success" th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.totalVendasValor, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</h4>
+                        <span class="small text-muted" th:text="${relatorio.quantidadeVendas} + ' vendas registradas'"></span>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="border rounded p-2 bg-primary-subtle text-primary-emphasis">
+                        <span class="small d-block">Ticket Médio por Venda:</span>
+                        <h4 class="fw-bold m-0 text-primary" th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.ticketMedio, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</h4>
+                        <span class="small text-muted" th:text="${relatorio.totalItensVendidos} + ' itens comercializados'"></span>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="border rounded p-2 bg-warning-subtle text-warning-emphasis">
+                        <span class="small d-block">Total Recebido em Dinheiro:</span>
+                        <h4 class="fw-bold m-0 text-dark" th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.totalDinheiro, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</h4>
+                        <span class="small text-muted" th:text="${relatorio.percDinheiro} + '% do faturamento'"></span>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="border rounded p-2 bg-info-subtle text-info-emphasis">
+                        <span class="small d-block">Total em PIX / Cartões:</span>
+                        <h4 class="fw-bold m-0 text-info-emphasis" th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.totalPix + relatorio.totalDebito + relatorio.totalCredito, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</h4>
+                        <span class="small text-muted">PIX + Débito + Crédito</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- 1. EXIBIÇÃO: RELATÓRIO CONSOLIDADO (TUDO JUNTO) -->
+            <!-- ============================================== -->
+            <div th:if="${tipo == 'CONSOLIDADO'}">
+                <div class="row g-3 mb-3">
+                    <!-- Formas de Pagamento -->
+                    <div class="col-md-6">
+                        <div class="border rounded p-3 bg-light-subtle h-100">
+                            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-pie-chart-fill text-primary me-1"></i> Faturamento por Forma de Pagamento</h6>
+                            <table class="table table-sm table-bordered small mb-0 align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Forma de Pagamento</th>
+                                        <th class="text-end">Total (R$)</th>
+                                        <th class="text-end">%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><i class="bi bi-cash text-success me-1"></i> Dinheiro</td>
+                                        <td class="text-end fw-bold" th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.totalDinheiro, 1, 'POINT', 2, 'COMMA')}"></td>
+                                        <td class="text-end" th:text="${relatorio.percDinheiro} + '%'"></td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="bi bi-qr-code text-primary me-1"></i> PIX</td>
+                                        <td class="text-end fw-bold" th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.totalPix, 1, 'POINT', 2, 'COMMA')}"></td>
+                                        <td class="text-end" th:text="${relatorio.percPix} + '%'"></td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="bi bi-credit-card text-info me-1"></i> Cartão de Débito</td>
+                                        <td class="text-end fw-bold" th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.totalDebito, 1, 'POINT', 2, 'COMMA')}"></td>
+                                        <td class="text-end" th:text="${relatorio.percDebito} + '%'"></td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="bi bi-credit-card-2-front text-warning me-1"></i> Cartão de Crédito</td>
+                                        <td class="text-end fw-bold" th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.totalCredito, 1, 'POINT', 2, 'COMMA')}"></td>
+                                        <td class="text-end" th:text="${relatorio.percCredito} + '%'"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Resumo de Caixa e Movimentações -->
+                    <div class="col-md-6">
+                        <div class="border rounded p-3 bg-light-subtle h-100">
+                            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-bank text-danger me-1"></i> Movimentações de Caixa no Período</h6>
+                            <ul class="list-group list-group-flush small">
+                                <li class="list-group-item bg-transparent d-flex justify-content-between px-0">
+                                    <span>Caixas Operados no Período:</span>
+                                    <strong th:text="${relatorio.quantidadeCaixas} + ' turno(s)'"></strong>
+                                </li>
+                                <li class="list-group-item bg-transparent d-flex justify-content-between px-0">
+                                    <span class="text-success"><i class="bi bi-arrow-down-circle"></i> Total de Suprimentos:</span>
+                                    <strong class="text-success" th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.totalSuprimentos, 1, 'POINT', 2, 'COMMA')}"></strong>
+                                </li>
+                                <li class="list-group-item bg-transparent d-flex justify-content-between px-0">
+                                    <span class="text-danger"><i class="bi bi-arrow-up-circle"></i> Total de Sangrias:</span>
+                                    <strong class="text-danger" th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.totalSangrias, 1, 'POINT', 2, 'COMMA')}"></strong>
+                                </li>
+                                <li class="list-group-item bg-transparent d-flex justify-content-between px-0">
+                                    <span>Divergência Total em Fechamentos:</span>
+                                    <strong th:class="${relatorio.totalDivergencias < 0 ? 'text-danger' : (relatorio.totalDivergencias > 0 ? 'text-success' : 'text-dark')}"
+                                            th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.totalDivergencias, 1, 'POINT', 2, 'COMMA')}"></strong>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Produtos Mais Vendidos -->
+                <div class="border rounded p-3 mb-3 bg-light-subtle">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-trophy-fill text-warning me-1"></i> Top 10 Produtos Mais Vendidos do Período</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Produto</th>
+                                    <th>Código EAN</th>
+                                    <th>Categoria</th>
+                                    <th class="text-center">Qtd Vendida</th>
+                                    <th class="text-end">Total Faturado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${#lists.isEmpty(relatorio.topProdutos)}">
+                                    <td colspan="6" class="text-center py-2 text-muted">Nenhum produto vendido no período.</td>
+                                </tr>
+                                <tr th:each="tp, stat : ${relatorio.topProdutos}">
+                                    <td th:text="${stat.count}"></td>
+                                    <td><strong th:text="${tp.nome}"></strong></td>
+                                    <td><code th:text="${tp.codigoBarras}"></code></td>
+                                    <td th:text="${tp.categoria}"></td>
+                                    <td class="text-center fw-bold"><span class="badge bg-primary" th:text="${tp.quantidadeVendida} + ' un'"></span></td>
+                                    <td class="text-end fw-bold text-success" th:text="'R$ ' + ${#numbers.formatDecimal(tp.totalFaturado, 1, 'POINT', 2, 'COMMA')}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Resumo de Estoque Crítico -->
+                <div class="border rounded p-3 bg-light-subtle">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold text-dark m-0"><i class="bi bi-exclamation-triangle-fill text-danger me-1"></i> Alertas de Estoque Baixo ou Zerado (<= 5 un.)</h6>
+                        <span class="badge bg-danger" th:text="${#lists.size(relatorio.produtosEstoqueBaixo)} + ' produtos críticos'"></span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Produto</th>
+                                    <th>Categoria</th>
+                                    <th class="text-end">Preço Venda</th>
+                                    <th class="text-center">Estoque Atual</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${#lists.isEmpty(relatorio.produtosEstoqueBaixo)}">
+                                    <td colspan="6" class="text-center py-2 text-success"><i class="bi bi-check-circle me-1"></i> Nenhum produto com estoque crítico!</td>
+                                </tr>
+                                <tr th:each="pb : ${relatorio.produtosEstoqueBaixo}">
+                                    <td><code th:text="${pb.codigoBarras}"></code></td>
+                                    <td><strong th:text="${pb.nome}"></strong></td>
+                                    <td th:text="${pb.categoria != null ? pb.categoria.nome : 'Geral'}"></td>
+                                    <td class="text-end" th:text="'R$ ' + ${#numbers.formatDecimal(pb.preco, 1, 'POINT', 2, 'COMMA')}"></td>
+                                    <td class="text-center fw-bold text-danger" th:text="${pb.estoque} + ' un'"></td>
+                                    <td class="text-center">
+                                        <span class="badge bg-danger" th:if="${pb.estoque <= 0}">ZERADO</span>
+                                        <span class="badge bg-warning text-dark" th:if="${pb.estoque > 0}">REPOSIÇÃO</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- 2. EXIBIÇÃO: RELATÓRIO DE VENDAS COMPLETO -->
+            <!-- ============================================== -->
+            <div th:if="${tipo == 'VENDAS'}">
+                <div class="table-responsive border rounded-2">
+                    <table class="table table-sm table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th># NFC-e</th>
+                                <th>Data / Hora</th>
+                                <th>Caixa</th>
+                                <th>Operador</th>
+                                <th>Consumidor (CPF/CNPJ)</th>
+                                <th>Forma Pagamento</th>
+                                <th class="text-end">Total da Venda</th>
+                                <th class="text-center">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(relatorio.vendasDetalhadas)}">
+                                <td colspan="8" class="text-center py-3 text-muted">Nenhuma venda encontrada no período selecionado.</td>
+                            </tr>
+                            <tr th:each="v : ${relatorio.vendasDetalhadas}">
+                                <td><code th:text="'#' + ${v.id}"></code></td>
+                                <td th:text="${#temporals.format(v.dataHora, 'dd/MM/yyyy HH:mm:ss')}"></td>
+                                <td><span class="badge bg-secondary-subtle text-secondary border" th:text="'Caixa #' + ${v.caixa.id}"></span></td>
+                                <td th:text="${v.usuario.nome}"></td>
+                                <td>
+                                    <span th:if="${v.cpfCnpj != null && !v.cpfCnpj.isBlank()}" th:text="${v.cpfCnpj}"></span>
+                                    <span th:unless="${v.cpfCnpj != null && !v.cpfCnpj.isBlank()}" class="text-muted fst-italic">Não informado</span>
+                                </td>
+                                <td><span class="badge bg-light text-dark border" th:text="${v.formaPagamento.descricao}"></span></td>
+                                <td class="text-end fw-bold text-success" th:text="'R$ ' + ${#numbers.formatDecimal(v.valorTotal, 1, 'POINT', 2, 'COMMA')}"></td>
+                                <td class="text-center">
+                                    <a th:href="@{/vendas/{id}(id=${v.id})}" target="_blank" class="btn btn-outline-primary btn-sm py-0 px-2" title="Ver Comprovante / DANFE">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- 3. EXIBIÇÃO: RELATÓRIO DE VENDAS POR HORÁRIO (PICO) -->
+            <!-- ============================================== -->
+            <div th:if="${tipo == 'HORARIOS'}">
+                <p class="small text-muted mb-2">Identificação das faixas de pico de movimento no PDV para escala de funcionários e reposição:</p>
+                <div class="table-responsive border rounded-2">
+                    <table class="table table-sm table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 20%;">Faixa de Horário</th>
+                                <th style="width: 15%;" class="text-center">Qtd Vendas</th>
+                                <th style="width: 20%;" class="text-end">Total Faturado</th>
+                                <th style="width: 15%;" class="text-end">% do Faturamento</th>
+                                <th style="width: 30%;">Distribuição Gráfica de Pico</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="vh : ${relatorio.vendasPorHorario}">
+                                <td><strong th:text="${vh.faixa}"></strong></td>
+                                <td class="text-center fw-bold" th:text="${vh.quantidadeVendas}"></td>
+                                <td class="text-end fw-bold text-success" th:text="'R$ ' + ${#numbers.formatDecimal(vh.totalValor, 1, 'POINT', 2, 'COMMA')}"></td>
+                                <td class="text-end" th:text="${vh.percentual} + '%'"></td>
+                                <td>
+                                    <div class="progress" style="height: 14px;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             th:style="'width: ' + ${vh.percentual} + '%;'" 
+                                             th:aria-valuenow="${vh.percentual}" aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- 4. EXIBIÇÃO: RELATÓRIO DE VENDAS POR CAIXA -->
+            <!-- ============================================== -->
+            <div th:if="${tipo == 'POR_CAIXA'}">
+                <p class="small text-muted mb-2">Consolidação de vendas e valores faturados agrupados por terminal de caixa:</p>
+                <div class="table-responsive border rounded-2">
+                    <table class="table table-sm table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th># Caixa</th>
+                                <th>Operador Responsável</th>
+                                <th>Abertura</th>
+                                <th>Fechamento</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Qtd Vendas</th>
+                                <th class="text-end">Total Vendido (R$)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(relatorio.vendasPorCaixa)}">
+                                <td colspan="7" class="text-center py-3 text-muted">Nenhum caixa com vendas no período selecionado.</td>
+                            </tr>
+                            <tr th:each="vc : ${relatorio.vendasPorCaixa}">
+                                <td><strong th:text="'Caixa #' + ${vc.caixaId}"></strong></td>
+                                <td th:text="${vc.operadorNome}"></td>
+                                <td th:text="${#temporals.format(vc.dataAbertura, 'dd/MM/yyyy HH:mm')}"></td>
+                                <td>
+                                    <span th:if="${vc.dataFechamento != null}" th:text="${#temporals.format(vc.dataFechamento, 'dd/MM/yyyy HH:mm')}"></span>
+                                    <span th:unless="${vc.dataFechamento != null}" class="text-muted fst-italic">Em aberto</span>
+                                </td>
+                                <td class="text-center">
+                                    <span th:class="${vc.status == 'Aberto' ? 'badge bg-success' : 'badge bg-secondary'}" th:text="${vc.status}"></span>
+                                </td>
+                                <td class="text-center fw-bold" th:text="${vc.quantidadeVendas}"></td>
+                                <td class="text-end fw-bold text-success" th:text="'R$ ' + ${#numbers.formatDecimal(vc.totalValor, 1, 'POINT', 2, 'COMMA')}"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- 5. EXIBIÇÃO: RELATÓRIO DE EVOLUÇÃO POR DIA -->
+            <!-- ============================================== -->
+            <div th:if="${tipo == 'POR_DIA'}">
+                <p class="small text-muted mb-2">Evolução diária de faturamento e vendas dia a dia no período:</p>
+                <div class="table-responsive border rounded-2">
+                    <table class="table table-sm table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Data</th>
+                                <th class="text-center">Qtd Vendas</th>
+                                <th class="text-end">Total Dinheiro (R$)</th>
+                                <th class="text-end">Total Cartão / PIX (R$)</th>
+                                <th class="text-end">Total Geral do Dia (R$)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="vd : ${relatorio.vendasPorDia}">
+                                <td><strong th:text="${#temporals.format(vd.data, 'dd/MM/yyyy (E)')}"></strong></td>
+                                <td class="text-center fw-bold" th:text="${vd.quantidadeVendas}"></td>
+                                <td class="text-end text-success" th:text="'R$ ' + ${#numbers.formatDecimal(vd.totalDinheiro, 1, 'POINT', 2, 'COMMA')}"></td>
+                                <td class="text-end text-primary" th:text="'R$ ' + ${#numbers.formatDecimal(vd.totalCartaoPix, 1, 'POINT', 2, 'COMMA')}"></td>
+                                <td class="text-end fw-bold text-dark fs-6" th:text="'R$ ' + ${#numbers.formatDecimal(vd.totalGeral, 1, 'POINT', 2, 'COMMA')}"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- 6. EXIBIÇÃO: RELATÓRIO DE CAIXA & MOVIMENTAÇÕES -->
+            <!-- ============================================== -->
+            <div th:if="${tipo == 'CAIXA'}">
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-box-arrow-right text-primary me-1"></i> Caixas Abertos e Fechados no Período</h6>
+                <div class="table-responsive border rounded-2 mb-3">
+                    <table class="table table-sm table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th># Caixa</th>
+                                <th>Operador</th>
+                                <th>Abertura</th>
+                                <th>Fechamento</th>
+                                <th class="text-end">Saldo Inicial</th>
+                                <th class="text-end">Saldo Esperado</th>
+                                <th class="text-end">Saldo Informado</th>
+                                <th class="text-end">Diferença (Quebra/Sobra)</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(relatorio.caixasDetalhados)}">
+                                <td colspan="9" class="text-center py-3 text-muted">Nenhum caixa registrado no período.</td>
+                            </tr>
+                            <tr th:each="c : ${relatorio.caixasDetalhados}">
+                                <td><code th:text="'#' + ${c.id}"></code></td>
+                                <td th:text="${c.usuario.nome}"></td>
+                                <td th:text="${#temporals.format(c.dataAbertura, 'dd/MM/yyyy HH:mm')}"></td>
+                                <td>
+                                    <span th:if="${c.dataFechamento != null}" th:text="${#temporals.format(c.dataFechamento, 'dd/MM/yyyy HH:mm')}"></span>
+                                    <span th:unless="${c.dataFechamento != null}" class="text-muted fst-italic">Aberto</span>
+                                </td>
+                                <td class="text-end" th:text="'R$ ' + ${#numbers.formatDecimal(c.saldoInicial, 1, 'POINT', 2, 'COMMA')}"></td>
+                                <td class="text-end" th:text="${c.saldoFinalCalculado != null ? 'R$ ' + #numbers.formatDecimal(c.saldoFinalCalculado, 1, 'POINT', 2, 'COMMA') : '-'}"></td>
+                                <td class="text-end" th:text="${c.saldoFinalInformado != null ? 'R$ ' + #numbers.formatDecimal(c.saldoFinalInformado, 1, 'POINT', 2, 'COMMA') : '-'}"></td>
+                                <td class="text-end fw-bold" th:classappend="${c.diferenca != null && c.diferenca < 0 ? 'text-danger' : (c.diferenca != null && c.diferenca > 0 ? 'text-success' : 'text-dark')}"
+                                    th:text="${c.diferenca != null ? 'R$ ' + #numbers.formatDecimal(c.diferenca, 1, 'POINT', 2, 'COMMA') : '-'}"></td>
+                                <td class="text-center">
+                                    <span th:class="${c.status.name() == 'ABERTO' ? 'badge bg-success' : 'badge bg-secondary'}" th:text="${c.status.descricao}"></span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-arrow-left-right text-warning me-1"></i> Sangrias e Suprimentos Realizados</h6>
+                <div class="table-responsive border rounded-2">
+                    <table class="table table-sm table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Data / Hora</th>
+                                <th>Caixa</th>
+                                <th>Operador</th>
+                                <th>Tipo de Movimento</th>
+                                <th>Motivo / Descrição</th>
+                                <th class="text-end">Valor (R$)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(relatorio.movimentosDetalhados)}">
+                                <td colspan="6" class="text-center py-3 text-muted">Nenhuma sangria ou suprimento registrado no período.</td>
+                            </tr>
+                            <tr th:each="m : ${relatorio.movimentosDetalhados}">
+                                <td th:text="${#temporals.format(m.dataHora, 'dd/MM/yyyy HH:mm:ss')}"></td>
+                                <td><span class="badge bg-secondary-subtle text-secondary border" th:text="'Caixa #' + ${m.caixa.id}"></span></td>
+                                <td th:text="${m.usuario != null ? m.usuario.nome : '-'}"></td>
+                                <td>
+                                    <span class="badge bg-danger" th:if="${m.tipo.name() == 'SANGRIA'}">SANGRIA (RETIRADA)</span>
+                                    <span class="badge bg-success" th:if="${m.tipo.name() == 'SUPRIMENTO'}">SUPRIMENTO (ENTRADA)</span>
+                                </td>
+                                <td th:text="${m.motivo}"></td>
+                                <td class="text-end fw-bold" th:classappend="${m.tipo.name() == 'SANGRIA' ? 'text-danger' : 'text-success'}"
+                                    th:text="'R$ ' + ${#numbers.formatDecimal(m.valor, 1, 'POINT', 2, 'COMMA')}"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- 7. EXIBIÇÃO: RELATÓRIO DE ESTOQUE & REPOSIÇÃO -->
+            <!-- ============================================== -->
+            <div th:if="${tipo == 'ESTOQUE'}">
+                <div class="row g-2 mb-3">
+                    <div class="col-md-4">
+                        <div class="border rounded p-2 bg-light-subtle">
+                            <span class="small text-muted d-block">Total de Produtos Ativos:</span>
+                            <h4 class="fw-bold text-dark m-0" th:text="${relatorio.totalProdutosAtivos} + ' itens'"></h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-2 bg-light-subtle">
+                            <span class="small text-muted d-block">Unidades Totais em Estoque:</span>
+                            <h4 class="fw-bold text-primary m-0" th:text="${relatorio.totalUnidadesEstoque} + ' unidades'"></h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-2 bg-light-subtle">
+                            <span class="small text-muted d-block">Valor Patrimonial do Estoque:</span>
+                            <h4 class="fw-bold text-success m-0" th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.valorTotalEstoque, 1, 'POINT', 2, 'COMMA')}"></h4>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive border rounded-2">
+                    <table class="table table-sm table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Código de Barras</th>
+                                <th>Produto</th>
+                                <th>Categoria</th>
+                                <th class="text-end">Preço Unitário</th>
+                                <th class="text-center">Estoque Atual</th>
+                                <th class="text-end">Subtotal em Estoque</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="p : ${relatorio.todosProdutos}">
+                                <td><code th:text="${p.codigoBarras}"></code></td>
+                                <td><strong th:text="${p.nome}"></strong></td>
+                                <td th:text="${p.categoria != null ? p.categoria.nome : 'Geral'}"></td>
+                                <td class="text-end" th:text="'R$ ' + ${#numbers.formatDecimal(p.preco, 1, 'POINT', 2, 'COMMA')}"></td>
+                                <td class="text-center fw-bold" th:text="${p.estoque} + ' un'"></td>
+                                <td class="text-end fw-bold text-success" th:text="'R$ ' + ${#numbers.formatDecimal(p.preco * p.estoque, 1, 'POINT', 2, 'COMMA')}"></td>
+                                <td class="text-center">
+                                    <span class="badge bg-danger" th:if="${p.estoque <= 0}">ZERADO</span>
+                                    <span class="badge bg-warning text-dark" th:if="${p.estoque > 0 && p.estoque <= 5}">BAIXO (<=5)</span>
+                                    <span class="badge bg-success" th:if="${p.estoque > 5}">NORMAL</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script>
+function alternarCamposDatas(valor) {
+    const divInicio = document.getElementById("divDataInicio");
+    const divFim = document.getElementById("divDataFim");
+    if (valor === "PERSONALIZADO") {
+        divInicio.style.display = "";
+        divFim.style.display = "";
+    } else {
+        divInicio.style.display = "none";
+        divFim.style.display = "none";
+    }
+}
+
+// Script de Atualização em Tempo Real (Polling a cada 10s)
+document.addEventListener("DOMContentLoaded", () => {
+    const checkAuto = document.getElementById("checkAutoRefresh");
+    const btnRefresh = document.getElementById("btnRecarregarTempoReal");
+
+    async function atualizarTempoReal() {
+        try {
+            const resp = await fetch("/api/gestao/tempo-real");
+            if (resp.ok) {
+                const data = await resp.json();
+                if (!data.temCaixaAberto) return;
+
+                if (document.getElementById("trTotalVendido")) {
+                    document.getElementById("trTotalVendido").innerText = Number(data.totalVendido).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+                if (document.getElementById("trQtdVendas")) {
+                    document.getElementById("trQtdVendas").innerText = data.quantidadeVendas;
+                }
+                if (document.getElementById("trSaldoGaveta")) {
+                    document.getElementById("trSaldoGaveta").innerText = Number(data.saldoGavetaEstimado).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+                if (document.getElementById("trTicketMedio")) {
+                    document.getElementById("trTicketMedio").innerText = Number(data.ticketMedio).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+                if (document.getElementById("trDinheiro")) {
+                    document.getElementById("trDinheiro").innerText = Number(data.totalDinheiro).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+                if (document.getElementById("trPix")) {
+                    document.getElementById("trPix").innerText = Number(data.totalPix).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+                if (document.getElementById("trDebito")) {
+                    document.getElementById("trDebito").innerText = Number(data.totalDebito).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+                if (document.getElementById("trCredito")) {
+                    document.getElementById("trCredito").innerText = Number(data.totalCredito).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+                if (document.getElementById("trSangrias")) {
+                    document.getElementById("trSangrias").innerText = Number(data.totalSangrias).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+                if (document.getElementById("trSuprimentos")) {
+                    document.getElementById("trSuprimentos").innerText = Number(data.totalSuprimentos).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+
+                // Atualizar últimas vendas
+                const corpo = document.getElementById("corpoTempoRealVendas");
+                if (corpo && data.ultimasVendas && data.ultimasVendas.length > 0) {
+                    corpo.innerHTML = "";
+                    data.ultimasVendas.forEach(uv => {
+                        const tr = document.createElement("tr");
+                        const hora = new Date(uv.dataHora).toLocaleTimeString('pt-BR');
+                        tr.innerHTML = `
+                            <td><code>#${uv.id}</code></td>
+                            <td>${hora}</td>
+                            <td>${uv.operador}</td>
+                            <td class="text-center"><span class="badge bg-light text-dark border">${uv.quantidadeItens} itens</span></td>
+                            <td>${uv.formaPagamento}</td>
+                            <td class="text-end fw-bold text-success">${Number(uv.total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                        `;
+                        corpo.appendChild(tr);
+                    });
+                }
+            }
+        } catch (e) {
+            console.warn("Erro ao atualizar monitor tempo real:", e);
+        }
+    }
+
+    if (btnRefresh) {
+        btnRefresh.addEventListener("click", () => {
+            btnRefresh.disabled = true;
+            btnRefresh.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Atualizando...`;
+            atualizarTempoReal().finally(() => {
+                btnRefresh.disabled = false;
+                btnRefresh.innerHTML = `<i class="bi bi-arrow-clockwise"></i> Atualizar Agora`;
+            });
+        });
+    }
+
+    // Auto-refresh a cada 10 segundos
+    setInterval(() => {
+        if (checkAuto && checkAuto.checked) {
+            atualizarTempoReal();
+        }
+    }, 10000);
+});
+</script>
+</body>
+</html>

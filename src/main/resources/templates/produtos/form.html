@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head(${produto.id == null ? 'Novo Produto' : 'Editar Produto'})}"></head>
+<body class="d-flex flex-column min-vh-100 bg-light">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container py-4 flex-grow-1">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="fw-bold mb-0" th:text="${produto.id == null ? '➕ Cadastrar Novo Produto' : '✏️ Editar Produto'}"></h5>
+                </div>
+                <div class="card-body p-4">
+                    <form th:action="@{/produtos/salvar}" th:object="${produto}" method="post">
+                        <input type="hidden" th:field="*{id}" />
+
+                        <div class="mb-3">
+                            <label for="nome" class="form-label fw-semibold">Nome da Mercadoria / Produto *</label>
+                            <input type="text" class="form-control" id="nome" th:field="*{nome}" required placeholder="Ex: Refrigerante Coca-Cola 350ml">
+                            <div class="text-danger small" th:if="${#fields.hasErrors('nome')}" th:errors="*{nome}"></div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="codigoBarras" class="form-label fw-semibold">Código de Barras (EAN) *</label>
+                                <input type="text" class="form-control font-monospace" id="codigoBarras" th:field="*{codigoBarras}" required placeholder="Ex: 7891000100101">
+                                <div class="text-danger small" th:if="${#fields.hasErrors('codigoBarras')}" th:errors="*{codigoBarras}"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="categoria" class="form-label fw-semibold">Categoria</label>
+                                <select class="form-select" id="categoria" th:field="*{categoria}">
+                                    <option value="">Selecione uma categoria...</option>
+                                    <option th:each="cat : ${categorias}" th:value="${cat.id}" th:text="${cat.nome}"></option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="preco" class="form-label fw-semibold">Preço Unitário (R$) *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number" step="0.01" min="0.01" class="form-control" id="preco" th:field="*{preco}" required placeholder="0,00">
+                                </div>
+                                <div class="text-danger small" th:if="${#fields.hasErrors('preco')}" th:errors="*{preco}"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="estoque" class="form-label fw-semibold">Quantidade em Estoque *</label>
+                                <input type="number" min="0" class="form-control" id="estoque" th:field="*{estoque}" required placeholder="0">
+                                <div class="text-danger small" th:if="${#fields.hasErrors('estoque')}" th:errors="*{estoque}"></div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a th:href="@{/produtos}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary fw-bold px-4">
+                                <i class="bi bi-save me-1"></i> Salvar Produto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

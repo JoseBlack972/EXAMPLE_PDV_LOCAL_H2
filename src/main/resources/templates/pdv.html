@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Frente de Caixa')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-body-tertiary">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container-fluid px-3 py-2 flex-grow-1">
+
+    <!-- ALERTA SE CAIXA ESTIVER FECHADO -->
+    <div th:if="${caixaAberto == null}" class="row justify-content-center my-4">
+        <div class="col-md-5 text-center">
+            <div class="card shadow-sm border-0 p-4 rounded-4 bg-body">
+                <i class="bi bi-lock-fill text-warning display-3 mb-2"></i>
+                <h4 class="fw-bold">Caixa Fechado</h4>
+                <p class="text-muted small">Para começar a registrar vendas no PDV, é necessário abrir o caixa e informar o saldo inicial.</p>
+                <div class="mt-2">
+                    <a th:href="@{/caixa/abertura}" class="btn btn-primary shadow px-4">
+                        <i class="bi bi-box-arrow-in-right"></i> Abrir Caixa Agora
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SE O CAIXA ESTIVER ABERTO -->
+    <div th:if="${caixaAberto != null}">
+        <!-- BARRA DE STATUS DO CAIXA -->
+        <div class="card shadow-sm border-0 mb-2 bg-body">
+            <div class="card-body py-1 px-3 d-flex flex-wrap justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-success px-2 py-1"><i class="bi bi-check-circle-fill"></i> CAIXA ABERTO #<span th:text="${caixaAberto.id}"></span></span>
+                    <span class="text-secondary small">
+                        <strong>Operador:</strong> <span th:text="${caixaAberto.usuario.nome}"></span> (<code th:text="'@' + ${caixaAberto.usuario.username}"></code>)
+                    </span>
+                    <span class="text-secondary small d-none d-md-inline">
+                        <strong>Abertura:</strong> <span th:text="${#temporals.format(caixaAberto.dataAbertura, 'dd/MM/yyyy HH:mm')}"></span>
+                    </span>
+                    <span class="text-muted small d-none d-lg-inline border-start ps-2">
+                        <i class="bi bi-building"></i> <span th:text="${empresa != null ? empresa.nomeFantasia : 'PDV'}"></span>
+                    </span>
+                </div>
+                <div class="d-flex gap-2 my-1">
+                    <a th:href="@{/caixa/movimento}" class="btn btn-outline-secondary btn-sm shadow-sm">
+                        <i class="bi bi-arrow-left-right"></i> Sangria / Suprimento
+                    </a>
+                    <a th:href="@{/caixa/fechamento}" class="btn btn-outline-danger btn-sm shadow-sm">
+                        <i class="bi bi-lock"></i> Fechar Caixa
+                    </a>
+                    <button type="button" class="btn btn-primary btn-sm shadow-sm fw-bold" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAssistenteIA" id="btnAbrirAssistenteIA">
+                        <i class="bi bi-robot me-1"></i> Assistente IA
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-2">
+            <!-- COLUNA ESQUERDA: ENTRADA DE ITENS E TABELA DO CARRINHO -->
+            <div class="col-lg-8">
+                <!-- NAVEGAÇÃO POR ABAS: HORIZONTAL, COMPACTA E DIFERENCIADA -->
+                <ul class="nav nav-pills" id="pdvTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab-codigo-tab" data-bs-toggle="pill" data-bs-target="#tab-codigo" type="button" role="tab" title="Busca direta por leitor ou digitação de código de barras">
+                            <i class="bi bi-upc-scan"></i> Código de Barras
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-lista-tab" data-bs-toggle="pill" data-bs-target="#tab-lista" type="button" role="tab" title="Lista todos os produtos e permite buscar por nome com seleção via mouse">
+                            <i class="bi bi-card-list"></i> Lista de Produtos (Nome)
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- CONTEÚDO DAS ABAS -->
+                <div class="tab-content mb-2" id="pdvTabsContent">
+                    <!-- ABA 1: SOMENTE CÓDIGO DE BARRAS -->
+                    <div class="tab-pane fade show active" id="tab-codigo" role="tabpanel">
+                        <div class="card shadow-sm border-0 bg-body">
+                            <div class="card-body p-2">
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-md-9">
+                                        <label for="codigoBarrasInput" class="form-label fw-bold mb-1 small">
+                                            <i class="bi bi-upc-scan text-primary me-1"></i> Código de Barras (EAN):
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="text" id="codigoBarrasInput" class="form-control fw-bold font-monospace" 
+                                                   placeholder="Bipe ou digite o código de barras (Enter)..." 
+                                                   autofocus autocomplete="off">
+                                            <button class="btn btn-primary px-3 fw-bold shadow-sm" id="btnBuscarCodigo" type="button" title="Adicionar produto à venda">
+                                                <i class="bi bi-plus-lg me-1"></i> Inserir
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="quantidadeInputCodigo" class="form-label fw-bold mb-1 small">Quantidade:</label>
+                                        <input type="number" id="quantidadeInputCodigo" class="form-control text-center fw-bold" value="1" min="1">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ABA 2: LISTA DE PRODUTOS COM BUSCA POR NOME E SELEÇÃO COM O MOUSE -->
+                    <div class="tab-pane fade" id="tab-lista" role="tabpanel">
+                        <div class="card shadow-sm border-0 bg-body">
+                            <div class="card-body p-2">
+                                <div class="row g-2 align-items-end mb-2">
+                                    <div class="col-md-9">
+                                        <label for="filtroNomeProduto" class="form-label fw-bold mb-1 small">
+                                            <i class="bi bi-search text-primary me-1"></i> Buscar por Nome do Produto:
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-body-tertiary"><i class="bi bi-search"></i></span>
+                                            <input type="text" id="filtroNomeProduto" class="form-control" 
+                                                   placeholder="Digite o nome (ex: Coca, Pão, Água)..." autocomplete="off">
+                                            <button class="btn btn-outline-secondary shadow-sm" id="btnLimparFiltro" type="button" title="Limpar busca">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="quantidadeInputLista" class="form-label fw-bold mb-1 small">Quantidade:</label>
+                                        <input type="number" id="quantidadeInputLista" class="form-control text-center fw-bold" value="1" min="1">
+                                    </div>
+                                </div>
+
+                                <!-- TABELA COMPLETA FILTRÁVEL (MÚLTIPLOS PRODUTOS COM MESMO NOME) -->
+                                <div class="table-responsive border rounded-2" style="max-height: 200px; overflow-y: auto;">
+                                    <table class="table table-hover table-sm align-middle mb-0" id="tabelaCatalogoProdutos">
+                                        <thead class="table-light sticky-top">
+                                            <tr>
+                                                <th style="width: 20%;">Código de Barras</th>
+                                                <th style="width: 35%;">Descrição / Nome</th>
+                                                <th style="width: 15%;">Categoria</th>
+                                                <th style="width: 12%;" class="text-end">Preço</th>
+                                                <th style="width: 8%;" class="text-center">Estoque</th>
+                                                <th style="width: 10%;" class="text-center">Ação</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="corpoCatalogoProdutos">
+                                            <!-- Preenchido dinamicamente via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-muted small mt-1 d-flex justify-content-between align-items-center">
+                                    <span style="font-size: 0.78rem;"><i class="bi bi-cursor-fill text-primary me-1"></i> Clique em qualquer linha para adicionar o produto com o mouse.</span>
+                                    <span id="contadorProdutosCatalogo" class="badge bg-secondary">0 produtos</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TABELA DE ITENS NO CARRINHO (SEMPRE VISÍVEL) -->
+                <div class="card shadow-sm border-0 bg-body">
+                    <div class="card-header bg-transparent py-1.5 px-3 d-flex justify-content-between align-items-center">
+                        <span class="fw-bold small m-0"><i class="bi bi-cart-check text-primary me-1"></i> Itens no Carrinho da Venda</span>
+                        <span id="contadorItens" class="badge bg-secondary">0 itens</span>
+                    </div>
+                    <div class="table-responsive" style="max-height: 340px; min-height: 180px;">
+                        <table class="table table-hover table-sm align-middle mb-0" id="tabelaCarrinho">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th style="width: 5%;">#</th>
+                                    <th style="width: 20%;">Código</th>
+                                    <th style="width: 35%;">Descrição</th>
+                                    <th style="width: 15%;" class="text-center">Qtd</th>
+                                    <th style="width: 12%;" class="text-end">Preço Unit.</th>
+                                    <th style="width: 13%;" class="text-end">Subtotal</th>
+                                    <th style="width: 5%;" class="text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpoCarrinho">
+                                <tr id="linhaVazia">
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                        <i class="bi bi-cart-x display-6 d-block mb-1"></i>
+                                        Nenhum item adicionado à venda.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUNA DIREITA: TOTAIS E PAGAMENTO -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 mb-2 bg-dark text-white rounded-3">
+                    <div class="card-body p-3 text-center">
+                        <div class="text-uppercase small text-light tracking-wide mb-1" style="font-size: 0.78rem;">Valor Total da Venda</div>
+                        <div class="fw-bold text-success" id="displayTotal">R$ 0,00</div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 mb-2 bg-body">
+                    <div class="card-body p-2">
+                        <div class="d-flex justify-content-between py-1.5 border-bottom small">
+                            <span class="text-muted">Subtotal:</span>
+                            <span class="fw-bold" id="displaySubtotal">R$ 0,00</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1.5 border-bottom small">
+                            <span class="text-muted">Desconto:</span>
+                            <span class="fw-bold text-danger" id="displayDesconto">R$ 0,00</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1.5 small">
+                            <span class="text-muted">Quantidade Total:</span>
+                            <span class="fw-bold" id="displayQtdTotal">0 un.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button class="btn btn-success btn-lg py-2.5 fw-bold shadow" id="btnFinalizarVenda" disabled>
+                        <i class="bi bi-wallet2 me-2"></i> Finalizar Venda (F2)
+                    </button>
+                    <button class="btn btn-outline-danger shadow-sm" id="btnCancelarVenda">
+                        <i class="bi bi-trash me-1"></i> Cancelar Venda
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- MODAL DE PAGAMENTO COM CPF/CNPJ -->
+<div class="modal fade" id="modalPagamento" tabindex="-1" aria-labelledby="modalPagamentoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg bg-body">
+            <div class="modal-header bg-primary text-white py-2">
+                <h5 class="modal-title fw-bold" id="modalPagamentoLabel">
+                    <i class="bi bi-cash-coin me-1"></i> Pagamento da Venda
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3">
+                <div class="text-center mb-3 p-2 bg-body-tertiary rounded-3">
+                    <span class="text-muted small text-uppercase" style="font-size: 0.75rem;">Total a Pagar</span>
+                    <h3 class="fw-bold text-primary m-0" id="modalTotalPagar">R$ 0,00</h3>
+                </div>
+
+                <!-- CAMPO CPF/CNPJ NA NOTA -->
+                <div class="mb-3">
+                    <label for="cpfCnpjInput" class="form-label fw-bold small mb-1">
+                        <i class="bi bi-person-vcard text-primary me-1"></i> CPF / CNPJ na Nota Fiscal (Opcional):
+                    </label>
+                    <input type="text" class="form-control font-monospace" id="cpfCnpjInput" 
+                           placeholder="Ex: 123.456.789-00 ou 12.345.678/0001-90" maxlength="18">
+                    <div class="form-text small" style="font-size: 0.75rem;">Deixe em branco se o consumidor não quiser identificar o documento.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small mb-1">Selecione a Forma de Pagamento:</label>
+                    <div class="row g-2" id="grupoFormaPagamento">
+                        <div class="col-6">
+                            <input type="radio" class="btn-check" name="formaPagamento" id="fpDinheiro" value="DINHEIRO" checked>
+                            <label class="btn btn-outline-primary w-100 py-2 shadow-sm" for="fpDinheiro">
+                                <i class="bi bi-cash d-block fs-4"></i> Dinheiro
+                            </label>
+                        </div>
+                        <div class="col-6">
+                            <input type="radio" class="btn-check" name="formaPagamento" id="fpPix" value="PIX">
+                            <label class="btn btn-outline-primary w-100 py-2 shadow-sm" for="fpPix">
+                                <i class="bi bi-qr-code d-block fs-4"></i> PIX
+                            </label>
+                        </div>
+                        <div class="col-6">
+                            <input type="radio" class="btn-check" name="formaPagamento" id="fpDebito" value="CARTAO_DEBITO">
+                            <label class="btn btn-outline-primary w-100 py-2 shadow-sm" for="fpDebito">
+                                <i class="bi bi-credit-card d-block fs-4"></i> Débito
+                            </label>
+                        </div>
+                        <div class="col-6">
+                            <input type="radio" class="btn-check" name="formaPagamento" id="fpCredito" value="CARTAO_CREDITO">
+                            <label class="btn btn-outline-primary w-100 py-2 shadow-sm" for="fpCredito">
+                                <i class="bi bi-credit-card-2-front d-block fs-4"></i> Crédito
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CAMPO DINHEIRO / TROCO -->
+                <div id="secaoDinheiro" class="p-2 border rounded-3 bg-body-tertiary mb-3">
+                    <div class="mb-2">
+                        <label for="valorRecebido" class="form-label fw-semibold small mb-1">Valor Recebido (R$):</label>
+                        <input type="number" step="0.01" class="form-control form-control-lg fw-bold" id="valorRecebido" placeholder="0,00">
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                        <span class="fw-bold small">Troco:</span>
+                        <span class="fs-5 fw-bold text-success" id="valorTroco">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <div id="secaoPix" class="p-2 border rounded-3 bg-body-tertiary mb-3 d-none text-center">
+                    <i class="bi bi-qr-code-scan display-5 text-primary d-block mb-1"></i>
+                    <span class="fw-bold small">Chave PIX:</span>
+                    <p class="text-muted small mb-1">financeiro@examplepdv.com.br</p>
+                    <span class="badge bg-success">Aguardando confirmação do PIX</span>
+                </div>
+
+                <div id="secaoCartao" class="p-2 border rounded-3 bg-body-tertiary mb-3 d-none text-center">
+                    <i class="bi bi-credit-card text-primary display-5 d-block mb-1"></i>
+                    <p class="mb-0 fw-semibold small">Insira ou aproxime o cartão na maquininha TEF</p>
+                </div>
+
+                <div id="erroPagamento" class="alert alert-danger py-1.5 small d-none"></div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary shadow-sm" data-bs-dismiss="modal">Voltar</button>
+                <button type="button" class="btn btn-success fw-bold px-4 shadow" id="btnConfirmarPagamento">
+                    <i class="bi bi-check-lg"></i> Confirmar & Emitir Cupom Fiscal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL COMPROVANTE / DANFE NFC-e REAL COM DADOS DA EMPRESA CONFIGURADA -->
+<div class="modal fade" id="modalComprovante" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg bg-white text-dark">
+            <div class="modal-header bg-dark text-white py-2">
+                <h6 class="modal-title fw-bold m-0"><i class="bi bi-receipt"></i> DANFE NFC-e - Cupom Fiscal Eletrônico</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3 font-monospace small cupom-fiscal" id="conteudoComprovante">
+                <!-- CABEÇALHO EMISSOR CONFIGURADO PELO ADMINISTRADOR (ESPELHADO) -->
+                <div class="text-center border-bottom pb-2 mb-2">
+                    <h6 class="fw-bold mb-0 text-uppercase" id="reciboRazaoSocial" 
+                        th:text="${empresa != null ? empresa.razaoSocial : 'EXEMPLO COMÉRCIO VAREJISTA LTDA'}">
+                        EXEMPLO COMÉRCIO VAREJISTA LTDA
+                    </h6>
+                    <div style="font-size: 0.75rem;">
+                        CNPJ: <span id="reciboCnpj" th:text="${empresa != null ? empresa.cnpj : '12.345.678/0001-90'}">12.345.678/0001-90</span> | 
+                        IE: <span id="reciboIe" th:text="${empresa != null ? empresa.inscricaoEstadual : '123.456.789.111'}">123.456.789.111</span>
+                    </div>
+                    <div id="reciboEndereco" style="font-size: 0.72rem;" 
+                         th:text="${empresa != null ? empresa.enderecoFormatado : 'Av. das Nações Unidas, 1000 - Salto / SP - CEP: 13320-000'}">
+                        Av. das Nações Unidas, 1000 - Salto / SP - CEP: 13320-000
+                    </div>
+                    <div class="fw-bold mt-2 text-uppercase" style="font-size: 0.8rem;">
+                        DANFE NFC-e - Documento Auxiliar da Nota Fiscal de Consumidor Eletrônica
+                    </div>
+                    <div class="text-muted" style="font-size: 0.7rem;">
+                        Ambiente: <span id="reciboAmbiente" th:text="${empresa != null ? empresa.ambienteSefaz.descricao : 'Homologação'}">Homologação</span> - Não permite aproveitamento de crédito de ICMS
+                    </div>
+                </div>
+
+                <!-- DADOS EMISSÃO E CAIXA / OPERADOR -->
+                <div class="border-bottom pb-1 mb-2" style="font-size: 0.75rem;">
+                    <div class="d-flex justify-content-between">
+                        <span><strong>NFC-e Nº:</strong> <span id="reciboVendaId">-</span></span>
+                        <span><strong>Série:</strong> <span id="reciboSerie" th:text="${empresa != null ? empresa.serieNfce : 1}">001</span></span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span><strong>Emissão:</strong> <span id="reciboDataHora">-</span></span>
+                    </div>
+                    <div class="d-flex justify-content-between bg-light p-1 rounded mt-1">
+                        <span><strong>Operador:</strong> <span th:if="${caixaAberto != null}" th:text="${caixaAberto.usuario.nome}"></span></span>
+                        <span><strong>Caixa:</strong> #<span th:if="${caixaAberto != null}" th:text="${caixaAberto.id}"></span></span>
+                    </div>
+                </div>
+
+                <!-- ITENS VENDIDOS -->
+                <div class="border-top border-bottom py-1 my-1">
+                    <table class="w-100" id="reciboItens" style="font-size: 0.75rem;">
+                        <!-- Preenchido via JS -->
+                    </table>
+                </div>
+
+                <!-- TOTAIS E PAGAMENTO -->
+                <div class="border-bottom pb-2 mb-2" style="font-size: 0.78rem;">
+                    <div class="d-flex justify-content-between fw-bold fs-6 my-1 border-top border-bottom py-1">
+                        <span>VALOR TOTAL R$:</span>
+                        <span id="reciboTotal" class="text-success">R$ 0,00</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>FORMA PAGTO:</span>
+                        <span id="reciboFormaPagto" class="fw-bold">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>VALOR PAGO R$:</span>
+                        <span id="reciboValorRecebido">R$ 0,00</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>TROCO R$:</span>
+                        <span id="reciboTroco">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <!-- TRIBUTOS LEI 12.741/2012 -->
+                <div class="text-center border-bottom pb-1 mb-2 text-muted" style="font-size: 0.7rem;">
+                    Valor aprox. dos tributos: <span id="reciboTributos">R$ 0,00</span> (18,45%) Fonte: IBPT
+                </div>
+
+                <!-- CONSUMIDOR -->
+                <div class="border-bottom pb-1 mb-2" style="font-size: 0.75rem;">
+                    <strong>CONSUMIDOR:</strong> <span id="reciboConsumidor">NÃO IDENTIFICADO</span>
+                </div>
+
+                <!-- CHAVE SEFAZ -->
+                <div class="text-center" style="font-size: 0.7rem;">
+                    <div class="fw-bold">CHAVE DE ACESSO:</div>
+                    <div class="font-monospace text-dark" id="reciboChaveAcesso">
+                        3526 0912 3456 7800 0190 6500 1000 0000 0001 1234 5678
+                    </div>
+                    <div class="mt-1">
+                        <strong>Protocolo de Autorização:</strong> 135260009874521
+                    </div>
+                </div>
+
+                <!-- QR CODE SEFAZ (SVG) -->
+                <div class="text-center py-2">
+                    <svg width="100" height="100" viewBox="0 0 100 100" class="mx-auto border p-1 rounded">
+                        <rect width="100" height="100" fill="white" />
+                        <rect x="10" y="10" width="25" height="25" fill="black" />
+                        <rect x="15" y="15" width="15" height="15" fill="white" />
+                        <rect x="18" y="18" width="9" height="9" fill="black" />
+                        <rect x="65" y="10" width="25" height="25" fill="black" />
+                        <rect x="70" y="15" width="15" height="15" fill="white" />
+                        <rect x="73" y="18" width="9" height="9" fill="black" />
+                        <rect x="10" y="65" width="25" height="25" fill="black" />
+                        <rect x="15" y="70" width="15" height="15" fill="white" />
+                        <rect x="18" y="73" width="9" height="9" fill="black" />
+                        <rect x="45" y="15" width="10" height="10" fill="black" />
+                        <rect x="40" y="35" width="20" height="10" fill="black" />
+                        <rect x="35" y="55" width="10" height="15" fill="black" />
+                        <rect x="55" y="50" width="15" height="10" fill="black" />
+                        <rect x="70" y="65" width="20" height="15" fill="black" />
+                        <rect x="45" y="75" width="15" height="15" fill="black" />
+                    </svg>
+                    <div class="text-muted mt-1" style="font-size: 0.68rem;">
+                        Consulte pela Chave de Acesso em:<br>
+                        <strong>https://www.fazenda.sp.gov.br/nfce/consulta</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer p-2 bg-light">
+                <button type="button" class="btn btn-secondary btn-sm shadow-sm" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-success btn-sm fw-bold shadow" id="btnImprimirComprovante" onclick="window.imprimirCupomFiscal('conteudoComprovante')">
+                    <i class="bi bi-printer"></i> Imprimir NFC-e
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- OFFCANVAS ASSISTENTE DE IA DO CAIXA -->
+<div class="offcanvas offcanvas-end shadow-lg" tabindex="-1" id="offcanvasAssistenteIA" aria-labelledby="offcanvasIALabel" style="width: 420px;">
+    <div class="offcanvas-header bg-primary text-white py-2">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-robot fs-4"></i>
+            <div>
+                <h6 class="offcanvas-title fw-bold mb-0" id="offcanvasIALabel">Assistente IA do Caixa</h6>
+                <span class="badge bg-success" style="font-size: 0.68rem;"><i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Conectado em Tempo Real</span>
+            </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column p-0 bg-body-tertiary">
+        <!-- ÁREA DE MENSAGENS -->
+        <div class="flex-grow-1 p-3 overflow-y-auto" id="chatCorpoIA" style="max-height: calc(100vh - 140px);">
+            <!-- Mensagem inicial de boas-vindas -->
+            <div class="d-flex gap-2 mb-3">
+                <div class="flex-shrink-0">
+                    <span class="badge rounded-circle bg-primary p-2 fs-6"><i class="bi bi-robot"></i></span>
+                </div>
+                <div class="bg-body border rounded-3 p-3 shadow-sm" style="max-width: 88%;">
+                    <p class="small mb-2">Olá, operador! Sou o <strong>Agente de IA do Caixa</strong>. Estou pronto para ajudar você em tempo real:</p>
+                    <ul class="small mb-2 ps-3 text-muted">
+                        <li>Consulta de preços e estoque atual</li>
+                        <li>Dúvidas de troco, desconto e sangrias</li>
+                        <li>Regras de pagamento, PIX e CPF na nota</li>
+                    </ul>
+                    <span class="small fw-semibold d-block text-secondary mb-1">Sugestões rápidas:</span>
+                    <div class="d-flex flex-wrap gap-1" id="chipsSugestoesIniciais">
+                        <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 chip-sugestao" style="font-size: 0.75rem;">Consultar Coca-Cola</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 chip-sugestao" style="font-size: 0.75rem;">Como fazer Sangria?</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 chip-sugestao" style="font-size: 0.75rem;">Situação do meu Caixa</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 chip-sugestao" style="font-size: 0.75rem;">Troco de 100 para 42,50</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CAMPO DE ENTRADA DA PERGUNTA -->
+        <div class="p-2 border-top bg-body">
+            <form id="formPerguntaIA" onsubmit="event.preventDefault();" class="m-0">
+                <div class="input-group">
+                    <input type="text" id="inputPerguntaIA" class="form-control" placeholder="Pergunte ao assistente... (Enter)" autocomplete="off">
+                    <button class="btn btn-primary fw-bold shadow-sm" type="button" id="btnEnviarPerguntaIA">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- BOTÃO FLUTUANTE DE ATALHO PARA O ASSISTENTE IA -->
+<button type="button" class="btn btn-primary shadow-lg rounded-pill px-3 py-2 position-fixed d-flex align-items-center gap-2" 
+        style="bottom: 22px; right: 22px; z-index: 1030;" 
+        data-bs-toggle="offcanvas" data-bs-target="#offcanvasAssistenteIA" title="Abrir Assistente Inteligente IA do Caixa">
+    <i class="bi bi-robot fs-5"></i>
+    <span class="fw-bold small">Assistente IA</span>
+</button>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:src="@{/js/pdv.js}"></script>
+</body>
+</html>

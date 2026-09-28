@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Gestão de Usuários')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-light">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container py-4 flex-grow-1">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1"><i class="bi bi-people-fill text-warning"></i> Usuários do Sistema</h3>
+            <p class="text-muted small mb-0">Controle de acessos, operadores de caixa e administradores</p>
+        </div>
+        <div>
+            <a th:href="@{/usuarios/novo}" class="btn btn-primary shadow-sm fw-bold">
+                <i class="bi bi-person-plus-fill me-1"></i> Novo Usuário
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 5%;">#</th>
+                        <th style="width: 30%;">Nome Completo</th>
+                        <th style="width: 25%;">Login / Usuário</th>
+                        <th style="width: 20%;">Perfil de Acesso</th>
+                        <th style="width: 10%;">Status</th>
+                        <th style="width: 10%;" class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="u, stat : ${usuarios}">
+                        <td th:text="${stat.count}" class="text-muted small"></td>
+                        <td><span class="fw-semibold" th:text="${u.nome}"></span></td>
+                        <td><code><i class="bi bi-person me-1"></i><span th:text="${u.username}"></span></code></td>
+                        <td>
+                            <span th:if="${u.perfil.name() == 'ADMIN'}" class="badge bg-danger">ADMINISTRADOR</span>
+                            <span th:if="${u.perfil.name() == 'OPERADOR'}" class="badge bg-info text-dark">OPERADOR</span>
+                        </td>
+                        <td>
+                            <span th:if="${u.ativo}" class="badge bg-success">Ativo</span>
+                            <span th:if="${!u.ativo}" class="badge bg-secondary">Inativo</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a th:href="@{'/usuarios/editar/' + ${u.id}}" class="btn btn-outline-primary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a th:href="@{'/usuarios/excluir/' + ${u.id}}" class="btn btn-outline-danger" 
+                                   onclick="return confirm('Deseja realmente excluir este usuário?')" title="Excluir">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

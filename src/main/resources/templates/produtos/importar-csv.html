@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Importar Estoque via CSV')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-light">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container py-4 flex-grow-1">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="h3 fw-bold mb-0 text-dark">
+                <i class="bi bi-file-earmark-spreadsheet text-success me-2"></i>Importação de Estoque em Lote (.CSV)
+            </h2>
+            <p class="text-muted small mb-0">Cadastre ou atualize produtos e quantidades de estoque simultaneamente via planilha</p>
+        </div>
+        <div>
+            <a th:href="@{/produtos/modelo-csv}" class="btn btn-outline-success me-2 shadow-sm fw-bold">
+                <i class="bi bi-download me-1"></i>Baixar Planilha Modelo (.CSV)
+            </a>
+            <a th:href="@{/produtos}" class="btn btn-outline-secondary shadow-sm">
+                <i class="bi bi-arrow-left me-1"></i>Voltar aos Produtos
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Formulário de Upload -->
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="card-title fw-bold mb-0 text-primary">
+                        <i class="bi bi-cloud-arrow-up me-2"></i>Selecione o arquivo .CSV do seu computador
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/produtos/importar-csv}" method="post" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label for="arquivo" class="form-label fw-bold">Arquivo CSV:</label>
+                            <input class="form-control form-control-lg" type="file" id="arquivo" name="arquivo" accept=".csv,text/csv" required>
+                            <div class="form-text mt-2">
+                                Formatos aceitos: arquivos <code>.csv</code> separados por ponto e vírgula (<code>;</code>) ou vírgula (<code>,</code>) codificados em UTF-8.
+                            </div>
+                        </div>
+
+                        <div class="alert alert-light border p-3 mb-4">
+                            <h6 class="fw-bold text-secondary mb-2"><i class="bi bi-info-circle me-1"></i>Regras de Atualização Inteligente (Upsert):</h6>
+                            <ul class="small text-muted mb-0 ps-3">
+                                <li>Se o <strong>Código de Barras (EAN)</strong> já existir no banco, o produto é <strong>atualizado</strong> (preço, quantidade em estoque e categoria).</li>
+                                <li>Se o <strong>Código de Barras</strong> for novo, o produto é <strong>cadastrado automaticamente</strong> no catálogo ativo.</li>
+                                <li>Se a <strong>Categoria</strong> informada na planilha ainda não existir, o sistema cria a categoria automaticamente sem travar o processamento.</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg fw-bold shadow-sm">
+                                <i class="bi bi-upload me-2"></i>Iniciar Processamento e Importação
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instruções de Formato e Exemplo -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-light py-3 border-0">
+                    <h5 class="card-title fw-bold mb-0 text-dark">
+                        <i class="bi bi-table me-2"></i>Estrutura das Colunas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3">
+                        Sua planilha pode conter as seguintes colunas (com ou sem linha de cabeçalho):
+                    </p>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Coluna</th>
+                                    <th>Obrigatório</th>
+                                    <th>Exemplo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Nome</strong></td>
+                                    <td><span class="badge bg-danger">Sim</span></td>
+                                    <td>Coca-Cola 350ml</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Código Barras</strong></td>
+                                    <td><span class="badge bg-danger">Sim</span></td>
+                                    <td>7891000100101</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Preço</strong></td>
+                                    <td><span class="badge bg-danger">Sim</span></td>
+                                    <td>5.50 ou 5,50</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Estoque</strong></td>
+                                    <td><span class="badge bg-secondary">Opcional</span></td>
+                                    <td>50</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Categoria</strong></td>
+                                    <td><span class="badge bg-secondary">Opcional</span></td>
+                                    <td>Bebidas</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Ativo</strong></td>
+                                    <td><span class="badge bg-secondary">Opcional</span></td>
+                                    <td>true / false</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-3">
+                        <span class="badge bg-info text-dark mb-1">Exemplo de Linha CSV:</span>
+                        <pre class="bg-dark text-light p-2 rounded small"><code>nome;codigo_barras;preco;estoque;categoria;ativo
+Café Expresso 30ml;7891000400001;4.50;100;Cafeteria;true</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resultados Detalhados da Importação -->
+    <div th:if="${resultadoImportacao}" class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-clipboard-data text-primary me-2"></i>Relatório da Importação Processada
+                    </h5>
+                    <div>
+                        <span class="badge bg-primary px-3 py-2 me-1" th:text="'Total Linhas: ' + ${resultadoImportacao.totalLinhas}"></span>
+                        <span class="badge bg-success px-3 py-2 me-1" th:text="'Novos Cadastros: ' + ${resultadoImportacao.criados}"></span>
+                        <span class="badge bg-info text-dark px-3 py-2 me-1" th:text="'Atualizados: ' + ${resultadoImportacao.atualizados}"></span>
+                        <span class="badge bg-danger px-3 py-2" th:if="${resultadoImportacao.falhas > 0}" th:text="'Falhas: ' + ${resultadoImportacao.falhas}"></span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Mensagens de Sucesso -->
+                    <div th:if="${not #lists.isEmpty(resultadoImportacao.mensagens)}" class="mb-3">
+                        <h6 class="fw-bold text-success"><i class="bi bi-check2-circle me-1"></i>Produtos Processados com Sucesso:</h6>
+                        <div class="border rounded p-3 bg-light" style="max-height: 200px; overflow-y: auto;">
+                            <ul class="mb-0 small text-dark ps-3">
+                                <li th:each="msg : ${resultadoImportacao.mensagens}" th:text="${msg}"></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Mensagens de Erros / Falhas -->
+                    <div th:if="${not #lists.isEmpty(resultadoImportacao.erros)}">
+                        <h6 class="fw-bold text-danger"><i class="bi bi-exclamation-octagon me-1"></i>Ocorrências / Erros Identificados:</h6>
+                        <div class="border rounded p-3 bg-danger bg-opacity-10" style="max-height: 180px; overflow-y: auto;">
+                            <ul class="mb-0 small text-danger ps-3">
+                                <li th:each="erro : ${resultadoImportacao.erros}" th:text="${erro}"></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Guia Whitelabel & Implementação')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-body-tertiary">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container py-3 flex-grow-1">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- CABEÇALHO DO GUIA WHITELABEL -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h4 class="fw-bold mb-1"><i class="bi bi-file-earmark-code-fill text-primary me-2"></i> Guia Whitelabel & Manual de Deploy Corporativo</h4>
+                    <p class="text-muted small mb-0">Instruções completas para personalizar a marca da sua empresa, migrar o banco de dados para PostgreSQL/MySQL e subir em produção.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a th:href="@{/admin/empresa}" class="btn btn-primary btn-sm fw-bold shadow-sm">
+                        <i class="bi bi-building-gear"></i> Configurar Minha Empresa
+                    </a>
+                </div>
+            </div>
+
+            <!-- 1. INTRODUÇÃO WHITELABEL -->
+            <div class="card shadow-sm border-0 mb-3 bg-body">
+                <div class="card-header bg-transparent py-2 border-bottom">
+                    <h5 class="fw-bold m-0 text-dark"><i class="bi bi-palette-fill text-primary me-2"></i> 1. Como Personalizar o Sistema (Whitelabel) para sua Empresa</h5>
+                </div>
+                <div class="card-body p-3">
+                    <p class="small text-muted mb-2">Este software foi arquitetado como uma plataforma <strong>Whitelabel</strong>, permitindo que qualquer empresa ou Software House o implemente com sua própria identidade visual e dados fiscais:</p>
+                    <ul class="small text-muted mb-3">
+                        <li><strong>Identidade da Empresa no Cupom Fiscal e Telas:</strong> Acesse o menu <strong>Admin &rarr; Configuração da Empresa</strong> para cadastrar Razão Social, Nome Fantasia, CNPJ, Inscrição Estadual, Telefone e Endereço. Todos os dados são refletidos instantaneamente nos cupons fiscais emitidos por todos os operadores.</li>
+                        <li><strong>Cores e Identidade Visual:</strong> No arquivo <code>src/main/resources/static/css/style.css</code>, você pode alterar as variáveis de cor primária na raiz (<code>:root</code>):
+                            <pre class="bg-dark text-light p-2 rounded small mt-1 font-monospace">:root {
+    --primary-color: #0d6efd; /* Altere para a cor primária da sua marca */
+    --success-color: #198754;
+    --danger-color: #dc3545;
+}</pre>
+                        </li>
+                        <li><strong>Logotipo e Ícones PWA:</strong> Substitua o nome e o ícone do sistema no <code>src/main/resources/templates/fragments/layout.html</code> e os ícones em <code>manifest.json</code>.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 2. MIGRAÇÃO DE BANCO DE DADOS (H2 -> POSTGRESQL / MYSQL) -->
+            <div class="card shadow-sm border-0 mb-3 bg-body">
+                <div class="card-header bg-transparent py-2 border-bottom">
+                    <h5 class="fw-bold m-0 text-dark"><i class="bi bi-database-fill-gear text-success me-2"></i> 2. Migração do Banco de Dados para Produção (PostgreSQL / MySQL)</h5>
+                </div>
+                <div class="card-body p-3">
+                    <p class="small text-muted mb-2">Por padrão, a aplicação utiliza o banco H2 em arquivo para facilitar testes rápidos e desenvolvimento sem dependências externas. Para ambientes de <strong>produção corporativa com múltiplos caixas simultâneos</strong>, a migração para PostgreSQL ou MySQL é altamente recomendada:</p>
+
+                    <h6 class="fw-bold text-dark mt-3 mb-1"><i class="bi bi-check-circle text-primary"></i> Opção A: Migração para PostgreSQL (Recomendado)</h6>
+                    <p class="small text-muted mb-1">1. Adicione o driver PostgreSQL no <code>pom.xml</code>:</p>
+                    <pre class="bg-dark text-light p-2 rounded small font-monospace">&lt;dependency&gt;
+    &lt;groupId&gt;org.postgresql&lt;/groupId&gt;
+    &lt;artifactId&gt;postgresql&lt;/artifactId&gt;
+    &lt;scope&gt;runtime&lt;/scope&gt;
+&lt;/dependency&gt;</pre>
+
+                    <p class="small text-muted mb-1 mt-2">2. Atualize o <code>docker-compose.yml</code> com o container oficial do PostgreSQL:</p>
+                    <pre class="bg-dark text-light p-2 rounded small font-monospace">services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/pdvdb
+      - SPRING_DATASOURCE_USERNAME=pdv_user
+      - SPRING_DATASOURCE_PASSWORD=pdv_secret_pass
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      - postgres-db
+
+  postgres-db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=pdvdb
+      - POSTGRES_USER=pdv_user
+      - POSTGRES_PASSWORD=pdv_secret_pass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  pgdata:</pre>
+
+                    <h6 class="fw-bold text-dark mt-3 mb-1"><i class="bi bi-check-circle text-primary"></i> Opção B: Migração para MySQL / MariaDB</h6>
+                    <p class="small text-muted mb-1">Adicione a dependência <code>com.mysql:mysql-connector-j</code> e aponte a URL para <code>jdbc:mysql://mysql-db:3306/pdvdb?useSSL=false&serverTimezone=America/Sao_Paulo</code>.</p>
+                </div>
+            </div>
+
+            <!-- 3. CONFIGURAÇÃO DE CERTIFICADO DIGITAL E SEFAZ -->
+            <div class="card shadow-sm border-0 mb-3 bg-body">
+                <div class="card-header bg-transparent py-2 border-bottom">
+                    <h5 class="fw-bold m-0 text-dark"><i class="bi bi-shield-check text-warning me-2"></i> 3. Certificados Digitais (A1 / A3) e Código CSC da SEFAZ</h5>
+                </div>
+                <div class="card-body p-3">
+                    <p class="small text-muted mb-2">Para emissão real de NFC-e com valor fiscal perante a Secretaria da Fazenda Estadual:</p>
+                    <ul class="small text-muted mb-2">
+                        <li><strong>Certificado Digital A1 (.pfx):</strong> É o padrão mais estável para sistemas web e PDVs em rede. Copie o arquivo do certificado para uma pasta segura no servidor (ex: <code>./certificados/empresa.pfx</code>) e monte como volume no Docker.</li>
+                        <li><strong>Token A3:</strong> Funciona em terminais desktop locais instalando a cadeia de certificados e o driver PKCS#11 da leitora de cartão ou token USB.</li>
+                        <li><strong>Código de Segurança do Contribuinte (CSC):</strong> Acesse o portal da SEFAZ do seu estado (ex: SEFAZ SP, SEFAZ MG, SEFAZ PR), faça login com o Certificado Digital da empresa e solicite o <em>ID do CSC</em> e o <em>Código CSC de Produção/Homologação</em>. Cadastre esses valores no menu da empresa.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 4. GUIA DE COMANDOS DOCKER EM PRODUÇÃO -->
+            <div class="card shadow-sm border-0 mb-4 bg-body">
+                <div class="card-header bg-transparent py-2 border-bottom">
+                    <h5 class="fw-bold m-0 text-dark"><i class="bi bi-terminal text-info me-2"></i> 4. Comandos Essenciais para Manutenção e Execução</h5>
+                </div>
+                <div class="card-body p-3">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm small mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 35%;">Comando</th>
+                                    <th>Finalidade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>docker compose up --build -d</code></td>
+                                    <td>Constrói a imagem com as últimas alterações e inicia em background.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>docker compose logs -f app</code></td>
+                                    <td>Acompanha em tempo real os logs de execução e transações da aplicação.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>docker compose down</code></td>
+                                    <td>Interrompe e encerra os containers mantendo os volumes de dados salvos.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>docker compose restart app</code></td>
+                                    <td>Reinicia o serviço da aplicação sem derrubar o banco de dados.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NAVEGAÇÃO DE RETORNO -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <a th:href="@{/admin/ajuda}" class="btn btn-outline-secondary shadow-sm">
+                    <i class="bi bi-journal-bookmark"></i> Manual de Operação do PDV
+                </a>
+                <a th:href="@{/admin/empresa}" class="btn btn-success fw-bold shadow">
+                    <i class="bi bi-building-gear me-1"></i> Acessar Configuração da Empresa &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

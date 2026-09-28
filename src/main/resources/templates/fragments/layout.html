@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="pt-BR" data-bs-theme="light">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} + ' - Sistema PDV'">Sistema PDV</title>
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('pdv_theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        })();
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="manifest" th:href="@{/manifest.json}">
+    <meta name="theme-color" content="#0d6efd">
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<nav th:fragment="navbar" class="navbar navbar-expand-xl navbar-dark bg-dark shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold text-white d-flex align-items-center gap-2" th:href="@{/pdv}">
+            <span th:if="${empresa != null and empresa.temLogoPersonalizada()}">
+                <img th:src="${empresa.logoUrl}" alt="Logo" style="max-height: 28px; max-width: 120px;" class="rounded" />
+            </span>
+            <span th:if="${empresa == null or !empresa.temLogoPersonalizada()}">
+                <i th:class="'bi fs-4 text-primary ' + ${empresa != null ? empresa.iconeBootstrap : 'bi-shop'}"></i>
+            </span>
+            <span th:text="${empresa != null ? empresa.nomeFantasia : 'PDV System'}">PDV System</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav me-auto mb-2 mb-xl-0">
+                <!-- Links Operacionais (Admin e Operador) -->
+                <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'OPERADOR')">
+                    <a class="nav-link" th:href="@{/pdv}"><i class="bi bi-calculator"></i> Frente de Caixa</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'OPERADOR')">
+                    <a class="nav-link" th:href="@{/caixa}"><i class="bi bi-cash-stack"></i> Caixa</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'OPERADOR')">
+                    <a class="nav-link" th:href="@{/produtos}"><i class="bi bi-box-seam"></i> Produtos</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'OPERADOR', 'GESTOR')">
+                    <a class="nav-link" th:href="@{/vendas}"><i class="bi bi-receipt"></i> Histórico Vendas</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'OPERADOR')">
+                    <a class="nav-link text-info" th:href="@{/delivery}"><i class="bi bi-bicycle"></i> Delivery (iFood/99Food)</a>
+                </li>
+
+                <!-- PORTAL DO GESTOR: Gestão & Relatórios (Exclusivo para Gestor e Admin) -->
+                <li class="nav-item" sec:authorize="hasAnyRole('GESTOR', 'ADMIN')">
+                    <a class="nav-link text-success fw-bold" th:href="@{/gestao}">
+                        <i class="bi bi-graph-up-arrow me-1"></i> Gestão & Relatórios
+                    </a>
+                </li>
+
+                <!-- MENU EXCLUSIVO PARA ADMINISTRADOR -->
+                <li class="nav-item dropdown" sec:authorize="hasRole('ADMIN')">
+                    <a class="nav-link dropdown-toggle text-warning fw-semibold" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-gear-fill me-1"></i> Administração
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark shadow">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/admin/empresa}">
+                                <i class="bi bi-building-gear me-2 text-warning"></i> Configuração da Empresa (Fiscal)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/usuarios}">
+                                <i class="bi bi-people-fill me-2 text-info"></i> Gerenciar Usuários
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/admin/ajuda}">
+                                <i class="bi bi-journal-bookmark-fill me-2 text-success"></i> Manual de Ajuda do PDV
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/admin/readme}">
+                                <i class="bi bi-file-earmark-code me-2 text-primary"></i> Guia Whitelabel & Deploy (README)
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <!-- Botão Modo Claro / Escuro -->
+                <button type="button" class="btn btn-outline-light btn-sm shadow-sm" id="btnThemeToggle" title="Alternar Modo Claro / Escuro">
+                    <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+                </button>
+
+                <!-- Botão Modo Tela Cheia -->
+                <button type="button" class="btn btn-outline-light btn-sm shadow-sm" id="btnFullscreenToggle" title="Alternar Tela Cheia">
+                    <i class="bi bi-arrows-fullscreen" id="fullscreenIcon"></i>
+                </button>
+
+                <!-- Informações do Usuário Logado -->
+                <span class="text-light small border-start border-secondary ps-2 ms-1">
+                    <i class="bi bi-person-circle"></i> 
+                    <span sec:authentication="name" class="fw-semibold">Usuário</span>
+                    <span sec:authorize="hasRole('ADMIN')" class="badge bg-danger ms-1">ADMIN</span>
+                    <span sec:authorize="hasRole('GESTOR')" class="badge bg-success ms-1">GESTOR</span>
+                    <span sec:authorize="hasRole('OPERADOR')" class="badge bg-info text-dark ms-1">OPERADOR</span>
+                </span>
+
+                <!-- Botão de Reset do App - Visível APENAS para ADMIN -->
+                <button sec:authorize="hasRole('ADMIN')" type="button" class="btn btn-danger btn-sm fw-bold shadow-sm" 
+                        data-bs-toggle="modal" data-bs-target="#modalResetApp" title="Redefinir aplicativo para dados de fábrica">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset App
+                </button>
+
+                <form th:action="@{/logout}" method="post" class="d-inline m-0">
+                    <button type="submit" class="btn btn-outline-light btn-sm shadow-sm" title="Sair do sistema">
+                        <i class="bi bi-box-arrow-right"></i> Sair
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Modal de Confirmação de Reset do App (Admin) -->
+<div th:fragment="modalReset" class="modal fade" id="modalResetApp" tabindex="-1" aria-labelledby="modalResetLabel" aria-hidden="true" sec:authorize="hasRole('ADMIN')">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger shadow-lg">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold" id="modalResetLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i> Reset Geral da Aplicação</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger py-2 small mb-3">
+                    <strong>⚠️ AÇÃO DESTRUTIVA IRREVERSÍVEL:</strong> O banco de dados será restaurado para o padrão inicial.
+                </div>
+                <p>Ao confirmar o reset, o sistema:</p>
+                <ul class="small text-muted">
+                    <li>Apagará todo o histórico de <strong>vendas e itens</strong>.</li>
+                    <li>Encerrará e limpará todos os <strong>caixas e movimentações</strong>.</li>
+                    <li>Apagará todos os <strong>pedidos delivery e motoboys</strong> e recriará os registros de exemplo.</li>
+                    <li>Restaurará o estoque e o catálogo padrão de <strong>produtos e categorias</strong>.</li>
+                    <li>Restaurará a <strong>empresa utilizadora padrão</strong> e parâmetros fiscais.</li>
+                    <li>Redefinirá os usuários: <code>admin/admin123</code>, <code>gestor/gestor123</code> e <code>operador/operador123</code>.</li>
+                </ul>
+                <p class="fw-bold text-center mt-3 mb-0">Deseja realmente continuar?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary shadow-sm" data-bs-dismiss="modal">Cancelar</button>
+                <form th:action="@{/admin/reset-app}" method="post" class="m-0">
+                    <button type="submit" class="btn btn-danger fw-bold shadow"><i class="bi bi-arrow-counterclockwise"></i> Sim, Resetar Agora</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="alerts" class="container-fluid px-4 mt-3">
+    <div th:if="${mensagemSucesso}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> <span th:text="${mensagemSucesso}">Sucesso</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${mensagemErro}" class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> <span th:text="${mensagemErro}">Erro</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+
+<footer th:fragment="footer" class="text-center py-3 text-muted small border-top mt-auto bg-body-tertiary">
+    <div class="container">
+        <span>Sistema PDV & Delivery &copy; 2026 - Executando em Docker</span>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/main.js}"></script>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Abertura de Caixa')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-light">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container py-4 flex-grow-1">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-success text-white py-3 rounded-top-4">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-unlock-fill me-1"></i> Abertura de Caixa</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form th:action="@{/caixa/abertura}" method="post">
+                        <div class="mb-3">
+                            <label for="saldoInicial" class="form-label fw-bold">Saldo Inicial em Gaveta (Troco Inicial) *</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-white fw-bold">R$</span>
+                                <input type="number" step="0.01" min="0.00" class="form-control fw-bold text-success" 
+                                       id="saldoInicial" name="saldoInicial" value="100.00" required autofocus>
+                            </div>
+                            <div class="form-text">Informe a quantia em dinheiro disponível para iniciar o turno.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="observacao" class="form-label fw-semibold">Observações de Abertura (Opcional)</label>
+                            <textarea class="form-control" id="observacao" name="observacao" rows="3" 
+                                      placeholder="Ex: Turno da manhã, troco em moedas e notas de 5 e 10"></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a th:href="@{/caixa}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-success fw-bold px-4 py-2">
+                                <i class="bi bi-check2-circle"></i> Confirmar e Abrir Caixa
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

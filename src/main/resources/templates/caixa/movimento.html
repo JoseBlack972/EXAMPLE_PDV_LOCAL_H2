@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Movimentação de Caixa')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-light">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container py-4 flex-grow-1">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-primary text-white py-3 rounded-top-4">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-arrow-left-right me-1"></i> Registrar Sangria / Suprimento</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form th:action="@{/caixa/movimento}" method="post">
+                        <div class="mb-3">
+                            <label for="tipo" class="form-label fw-bold">Tipo de Operação *</label>
+                            <select class="form-select form-select-lg" id="tipo" name="tipo" required>
+                                <option value="SUPRIMENTO">🟢 Suprimento / Aporte (Adicionar Dinheiro)</option>
+                                <option value="SANGRIA">🔴 Sangria / Retirada (Retirar Dinheiro)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="valor" class="form-label fw-bold">Valor da Operação (R$) *</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-white fw-bold">R$</span>
+                                <input type="number" step="0.01" min="0.01" class="form-control fw-bold" 
+                                       id="valor" name="valor" required placeholder="0,00" autofocus>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="motivo" class="form-label fw-semibold">Motivo / Justificativa *</label>
+                            <input type="text" class="form-control" id="motivo" name="motivo" required 
+                                   placeholder="Ex: Troco adicional para moedas, ou recolhimento para cofre">
+                        </div>
+
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a th:href="@{/caixa}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary fw-bold px-4 py-2">
+                                <i class="bi bi-save me-1"></i> Registrar Movimentação
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

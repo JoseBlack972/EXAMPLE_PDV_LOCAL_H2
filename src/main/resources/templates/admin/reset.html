@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Painel Administrativo - Reset')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-light">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container py-4 flex-grow-1">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-danger border-2 rounded-4">
+                <div class="card-header bg-danger text-white py-3 rounded-top-4">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset da Aplicação (Admin)</h5>
+                </div>
+                <div class="card-body p-4 text-center">
+                    <i class="bi bi-exclamation-triangle-fill text-danger display-3 mb-3"></i>
+                    <h4 class="fw-bold">Restauração de Dados</h4>
+                    <p class="text-muted">
+                        Esta funcionalidade é exclusiva para administradores. Ela restaura o banco de dados da aplicação para a configuração inicial de fábrica.
+                    </p>
+                    <div class="alert alert-light border text-start small mb-4">
+                        <strong>O que acontecerá:</strong>
+                        <ul class="mb-0 mt-1">
+                            <li>Todas as vendas, caixas e movimentações serão excluídos.</li>
+                            <li>Os produtos e categorias de demonstração serão reinseridos.</li>
+                            <li>Os usuários padrão (admin / operador) serão redefinidos.</li>
+                        </ul>
+                    </div>
+
+                    <button type="button" class="btn btn-danger btn-lg fw-bold px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalResetApp">
+                        <i class="bi bi-arrow-counterclockwise"></i> Iniciar Reset do Sistema
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

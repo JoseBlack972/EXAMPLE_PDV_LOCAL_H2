@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Produtos')}"></head>
+<body class="d-flex flex-column min-vh-100 bg-light">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: modalReset}"></div>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container py-4 flex-grow-1">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1"><i class="bi bi-box-seam text-primary"></i> Catálogo de Produtos</h3>
+            <p class="text-muted small mb-0">Gestão de produtos, preços de venda e estoque</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a th:href="@{/produtos/importar-csv}" sec:authorize="hasAnyRole('GESTOR', 'ADMIN')" class="btn btn-outline-success shadow-sm fw-bold">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Importar Estoque (.CSV)
+            </a>
+            <a th:href="@{/produtos/novo}" sec:authorize="hasRole('ADMIN')" class="btn btn-primary shadow-sm fw-bold">
+                <i class="bi bi-plus-circle me-1"></i> Novo Produto
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 5%;">#</th>
+                        <th style="width: 15%;">Código de Barras</th>
+                        <th style="width: 35%;">Nome do Produto</th>
+                        <th style="width: 15%;">Categoria</th>
+                        <th style="width: 10%;" class="text-end">Preço</th>
+                        <th style="width: 10%;" class="text-center">Estoque</th>
+                        <th style="width: 10%;" class="text-center" sec:authorize="hasRole('ADMIN')">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(produtos)}">
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox display-6 d-block mb-2"></i> Nenhum produto cadastrado.
+                        </td>
+                    </tr>
+                    <tr th:each="p, stat : ${produtos}">
+                        <td th:text="${stat.count}" class="text-muted small"></td>
+                        <td>
+                            <code class="fw-bold text-dark" th:text="${p.codigoBarras}"></code>
+                        </td>
+                        <td>
+                            <span class="fw-semibold" th:text="${p.nome}"></span>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary" th:text="${p.categoria != null ? p.categoria.nome : 'Sem categoria'}"></span>
+                        </td>
+                        <td class="text-end fw-bold text-success">
+                            R$ <span th:text="${#numbers.formatDecimal(p.preco, 1, 'POINT', 2, 'COMMA')}"></span>
+                        </td>
+                        <td class="text-center">
+                            <span th:class="${p.estoque <= 10 ? 'badge bg-danger' : 'badge bg-light text-dark border'}" 
+                                  th:text="${p.estoque} + ' un.'">
+                            </span>
+                        </td>
+                        <td class="text-center" sec:authorize="hasRole('ADMIN')">
+                            <div class="btn-group btn-group-sm">
+                                <a th:href="@{'/produtos/editar/' + ${p.id}}" class="btn btn-outline-primary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a th:href="@{'/produtos/excluir/' + ${p.id}}" class="btn btn-outline-danger" 
+                                   onclick="return confirm('Deseja realmente desativar este produto?')" title="Excluir">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
