@@ -1,206 +1,167 @@
 # 🏪 Sistema PDV & Delivery
 
-Sistema de **Ponto de Venda (PDV)** desenvolvido com **Java e Spring Boot**, com autenticação, controle de acesso por perfil, gerenciamento de produtos, estoque, caixa, vendas, delivery e relatórios.
+Aplicação de **Ponto de Venda (PDV) e Delivery** desenvolvida com **Java e Spring Boot**, criada como projeto prático para estudo e desenvolvimento de conhecimentos em Backend.
 
-O projeto foi desenvolvido com foco em **Backend Java, persistência de dados, segurança, Docker e arquitetura de aplicações web**.
-
----
-
-## 🎯 Sobre o projeto
-
-O objetivo deste projeto é simular um sistema de PDV utilizado por uma cafeteria/comércio, permitindo controlar operações como:
-
-* 🛒 Registro de vendas
-* 📦 Gerenciamento de produtos e estoque
-* 💰 Controle de caixa
-* 👥 Controle de usuários e permissões
-* 🚚 Gestão de delivery
-* 📊 Relatórios gerenciais
-* 📥 Importação de estoque via CSV
-* 🔐 Autenticação e autorização por perfil
-* 💾 Persistência de dados
-* 🐳 Execução utilizando Docker
-
-O projeto possui suporte a **H2 para desenvolvimento/local** e estrutura preparada para utilização com **PostgreSQL em ambientes de deploy**.
+O sistema reúne funcionalidades de autenticação, controle de acesso por perfil, produtos, estoque, caixa, vendas, delivery e gestão, utilizando **H2** para execução local e estrutura preparada para utilização com **PostgreSQL** em ambientes de deploy.
 
 ---
 
-## 🛠️ Tecnologias
+## 🚀 Sobre o projeto
 
-### Backend
+O objetivo deste projeto é desenvolver uma aplicação prática utilizando tecnologias e conceitos comuns no desenvolvimento Backend com Java.
 
+A aplicação foi construída utilizando:
 
-
-\
-
-### Banco de dados
-
-\
-
-### Infraestrutura
-
-
-\
-
-### Web
-
-* Thymeleaf
-* HTML
-* CSS
-* JavaScript
-* Spring MVC
+* ☕ Java 17
+* 🌱 Spring Boot
+* 🔐 Spring Security
+* 🗄️ Spring Data JPA / Hibernate
+* 💾 H2 Database
+* 🐘 PostgreSQL
+* 🐳 Docker
+* 📦 Docker Compose
+* 🛠️ Maven
+* 🌐 Thymeleaf
 
 ---
 
-## 🏗️ Arquitetura
+## ✅ Funcionalidades implementadas
 
-A aplicação segue uma arquitetura baseada no ecossistema Spring:
+### 🔐 Autenticação e usuários
 
-```text
-                    ┌──────────────────┐
-                    │    Navegador     │
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │   Spring MVC     │
-                    │   Controllers    │
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │    Services      │
-                    │ Regras de negócio│
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │   Spring Data    │
-                    │       JPA        │
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │       H2         │
-                    │   Local/Dev      │
-                    └──────────────────┘
-```
-
-Para ambientes de deploy, o projeto também possui configuração para utilização com PostgreSQL.
-
----
-
-## 👥 Perfis de acesso
-
-O sistema possui controle de acesso baseado em funções utilizando Spring Security.
-
-| Perfil       | Responsabilidades                                      |
-| ------------ | ------------------------------------------------------ |
-| **ADMIN**    | Acesso administrativo e gerenciamento geral do sistema |
-| **GESTOR**   | Gestão, relatórios e acompanhamento das operações      |
-| **OPERADOR** | Operação do PDV, caixa e vendas                        |
-
-> As permissões são controladas pela camada de segurança da aplicação.
-
----
-
-## 📦 Principais funcionalidades
+* Login de usuários
+* Controle de acesso por perfil
+* Perfis de usuário
+* Proteção das áreas da aplicação
 
 ### 🛒 PDV
 
 * Registro de vendas
-* Seleção de produtos
-* Controle de quantidade
+* Adição e remoção de produtos
 * Cálculo de valores
-* Operação de caixa
+* Controle da operação de caixa
+* Fluxo de atendimento
 
 ### 📦 Produtos e estoque
 
 * Cadastro de produtos
-* Gerenciamento de estoque
-* Importação de produtos via CSV
-* Controle de quantidade
+* Consulta de produtos
+* Controle de estoque
+* Atualização de quantidade
+* Importação de produtos/estoque através de CSV
 
 ### 💰 Caixa
 
 * Abertura de caixa
 * Fechamento de caixa
+* Operações de caixa
 * Sangrias
 * Suprimentos
-* Acompanhamento das operações
 
-### 🚚 Delivery
+### 🛵 Delivery
 
 * Gerenciamento de pedidos
-* Controle de entregas
-* Cadastro de motoboys
+* Controle das operações de delivery
+* Organização dos pedidos
 
-### 📊 Gestão
+### 📊 Gestão e relatórios
 
+* Área de gestão
 * Relatórios de vendas
-* Indicadores de operação
-* Acompanhamento de caixa
-* Consultas gerenciais
-
-### 🔐 Segurança
-
-* Autenticação de usuários
-* Controle de acesso por perfil
-* Proteção de áreas administrativas
-* Integração com Spring Security
+* Consultas por período
+* Informações para acompanhamento da operação
 
 ---
 
-## 🗄️ Banco de dados
+## 👥 Perfis de acesso
 
-### Ambiente local
+A aplicação possui diferentes níveis de acesso:
 
-Por padrão, o projeto pode utilizar o H2 em modo persistente:
+| Perfil     | Descrição                                        |
+| ---------- | ------------------------------------------------ |
+| `ADMIN`    | Acesso administrativo e gerenciamento do sistema |
+| `GESTOR`   | Gestão, estoque e relatórios                     |
+| `OPERADOR` | Operação do PDV e caixa                          |
 
-```text
-jdbc:h2:file:/data/pdvdb
-```
-
-Quando executado com Docker, os dados são armazenados em um volume:
-
-```text
-Docker Volume
-      │
-      ▼
-   /data
-      │
-      ▼
-   H2 Database
-```
-
-Isso permite manter os dados mesmo após a parada do container.
-
-### PostgreSQL
-
-O projeto também possui configuração para utilização de PostgreSQL em ambientes de deploy.
+O controle de permissões é realizado através do **Spring Security**.
 
 ---
 
-## 🐳 Executando com Docker
+## 🏗️ Arquitetura simplificada
 
-### Requisitos
+```text
+                    ┌─────────────────────┐
+                    │      Usuário        │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │   Spring Security   │
+                    │ Autenticação / Role │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │    Spring Boot      │
+                    │   Controllers       │
+                    │   Services          │
+                    │   Repositories      │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │   JPA / Hibernate   │
+                    └──────────┬──────────┘
+                               │
+                    ┌──────────┴──────────┐
+                    ▼                     ▼
+              ┌───────────┐       ┌────────────┐
+              │    H2     │       │ PostgreSQL │
+              │   Local   │       │  Deploy    │
+              └───────────┘       └────────────┘
+```
+
+---
+
+# 🗄️ Banco de dados
+
+## H2 — Ambiente local
+
+Para facilitar o desenvolvimento e testes locais, a aplicação utiliza **H2 Database**.
+
+Quando executada com Docker, os dados são armazenados em:
+
+```text
+/data/pdvdb
+```
+
+O Docker utiliza um volume para manter os dados mesmo quando o container é reiniciado.
+
+## PostgreSQL — Deploy
+
+O projeto também possui configuração para utilização com **PostgreSQL**, permitindo separar o ambiente de desenvolvimento local do ambiente de deploy.
+
+---
+
+# 🐳 Executando com Docker
+
+## Requisitos
+
+Antes de iniciar, tenha instalado:
 
 * Docker
 * Docker Compose
 
-Clone o projeto:
+Verifique:
 
 ```bash
-git clone https://github.com/JoseBlack972/EXAMPLE_PDV_LOCAL_H2.git
+docker --version
+docker compose version
 ```
 
-Entre no diretório:
+## Iniciar a aplicação
 
-```bash
-cd EXAMPLE_PDV_LOCAL_H2
-```
-
-Execute:
+Dentro da pasta do projeto:
 
 ```bash
 docker compose up --build
@@ -212,7 +173,7 @@ Ou em segundo plano:
 docker compose up --build -d
 ```
 
-A aplicação estará disponível em:
+Depois acesse:
 
 ```text
 http://localhost:8080
@@ -220,38 +181,37 @@ http://localhost:8080
 
 ---
 
-## 🛑 Comandos Docker
+## 🛑 Parar a aplicação
 
-### Ver logs
-
-```bash
-docker compose logs -f
-```
-
-### Parar a aplicação
-
-Os dados são preservados:
+Para parar os containers mantendo os dados:
 
 ```bash
 docker compose down
 ```
 
-### Remover containers e volume do banco
-
-⚠️ Isso remove os dados persistidos pelo volume:
+Para remover também o volume do banco e iniciar novamente do zero:
 
 ```bash
 docker compose down -v
 ```
 
+> ⚠️ O comando `docker compose down -v` remove o volume utilizado para persistência dos dados. Utilize somente quando quiser realmente reinicializar o banco.
+
 ---
 
-## ☕ Executando sem Docker
+# ☕ Executando sem Docker
 
-### Requisitos
+## Requisitos
 
 * Java 17
 * Maven
+
+Verifique:
+
+```bash
+java -version
+mvn -version
+```
 
 Execute:
 
@@ -259,175 +219,207 @@ Execute:
 mvn clean spring-boot:run
 ```
 
-A aplicação será iniciada em:
+A aplicação será iniciada na porta:
 
 ```text
-http://localhost:8080
+8080
 ```
 
-O banco H2 local será armazenado em:
+O banco H2 será armazenado localmente na pasta:
 
 ```text
-./data/pdvdb.mv.db
+./data/
 ```
 
 ---
 
-## 🗃️ Console H2
+# 🗃️ Console H2
 
-Durante o desenvolvimento local, o projeto disponibiliza o console H2:
+Durante o desenvolvimento local, o projeto possui suporte ao console web do H2.
+
+Acesse:
 
 ```text
 http://localhost:8080/h2-console
 ```
 
-Configuração:
-
-```text
-Driver: org.h2.Driver
+### Configuração local
 
 JDBC URL:
-jdbc:h2:file:/data/pdvdb
 
-User:
-sa
-
-Password:
-em branco
+```text
+jdbc:h2:file:./data/pdvdb
 ```
 
-> ⚠️ O console H2 é destinado ao desenvolvimento/local. Em um ambiente de produção, ele deve permanecer desabilitado.
+Usuário:
+
+```text
+sa
+```
+
+Senha:
+
+```text
+```
+
+> ⚠️ O console H2 e essas configurações são destinados ao **ambiente de desenvolvimento/local**. Não devem ser expostos dessa forma em um ambiente de produção.
 
 ---
 
-## 📥 Importação de estoque
+# 🔑 Credenciais de demonstração
 
-O projeto possui suporte à importação de estoque utilizando arquivos CSV.
+Para facilitar a avaliação do projeto em ambiente local, existem usuários de demonstração:
 
-Exemplo:
+| Usuário    | Perfil   |
+| ---------- | -------- |
+| `admin`    | ADMIN    |
+| `gestor`   | GESTOR   |
+| `operador` | OPERADOR |
 
-```text
-CSV
- │
- ▼
-Importação
- │
- ▼
-Validação
- │
- ▼
-Produtos
- │
- ▼
-Estoque
-```
+### ⚠️ Importante
 
-Também está disponível um arquivo de exemplo:
+As credenciais disponibilizadas pelo projeto são **exclusivamente para demonstração e desenvolvimento local**.
+
+**Não utilize essas credenciais em produção.**
+
+Em um ambiente real, as credenciais devem ser configuradas de forma segura, preferencialmente através de variáveis de ambiente, secrets ou outro mecanismo apropriado de gerenciamento de credenciais.
+
+---
+
+# 📥 Importação de estoque
+
+O projeto possui suporte à importação de dados de estoque através de arquivo CSV.
+
+Exemplo de arquivo disponível no projeto:
 
 ```text
 cafeteria_estoque_50_produtos.csv
 ```
 
+Também existem scripts auxiliares para povoamento inicial dos dados.
+
 ---
 
-## 🧪 Testes
+# 🧪 Testes
 
-O projeto utiliza as ferramentas de testes do ecossistema Spring.
-
-Dependências relacionadas a testes incluem:
+O projeto possui dependências de testes do ecossistema Spring, incluindo suporte para:
 
 * Spring Boot Test
 * Spring Security Test
 
-A evolução do projeto inclui a implementação de testes unitários, testes de integração e testes relacionados à segurança.
+A evolução do projeto inclui ampliar a cobertura com:
+
+* Testes unitários
+* Testes de integração
+* Testes de segurança
+* Testes dos principais fluxos do PDV
 
 ---
 
-## 🚀 Deploy
+# 🚧 Próximas evoluções
 
-O projeto possui configuração para deploy utilizando Docker e PostgreSQL.
+Algumas funcionalidades estão planejadas para futuras versões do projeto e **não devem ser consideradas implementadas na versão atual**.
 
-Arquivo:
+### Integrações externas
 
-```text
-render.yaml
-```
+* 🔌 Integrações com APIs externas
+* 🛵 Integrações com plataformas de delivery
+* 🧾 Integração com emissão fiscal/NFC-e
+* 🔐 Suporte a certificados digitais A1/A3
+* ⚙️ Integrações com serviços externos
 
-Arquitetura prevista:
+### Inteligência Artificial
 
-```text
-          Internet
-              │
-              ▼
-       ┌──────────────┐
-       │ Render / Web │
-       │   Service    │
-       └──────┬───────┘
-              │
-              ▼
-       ┌──────────────┐
-       │ Spring Boot  │
-       │   + Docker   │
-       └──────┬───────┘
-              │
-              ▼
-       ┌──────────────┐
-       │ PostgreSQL   │
-       └──────────────┘
-```
+* 🤖 Experimentação de recursos de IA
+* 🤖 Assistente para operações do sistema
+* 🔗 Integração com APIs de IA
+
+Esses itens fazem parte do **roadmap de estudo e evolução do projeto**.
 
 ---
 
-## 🔒 Segurança
+# 🔒 Segurança
 
-Este projeto possui credenciais de demonstração para facilitar a execução local.
+Este projeto possui finalidade principalmente **educacional e de portfólio**.
 
-**Não utilize credenciais de demonstração em ambientes públicos ou de produção.**
+Antes de utilizar a aplicação em um ambiente real, recomenda-se implementar, entre outros:
 
-Para uma implantação real, recomenda-se utilizar:
-
+* Gerenciamento seguro de credenciais
 * Variáveis de ambiente
-* Senhas fortes
 * Secrets
-* Perfis separados para desenvolvimento e produção
+* HTTPS
+* Configurações específicas para produção
 * Desativação do console H2 em produção
+* Política adequada de senhas
+* Controle de permissões mais granular
+* Migrações de banco de dados
+* Monitoramento e logs
+* Hardening do container Docker
 
 ---
 
-## 📌 Próximas melhorias
+# 📋 Roadmap técnico
 
-* [ ] Implementar cobertura maior de testes
-* [ ] Adicionar testes de integração
-* [ ] Adicionar migrations com Flyway
-* [ ] Separar configurações `dev` e `prod`
-* [ ] Melhorar gerenciamento de credenciais
-* [ ] Executar container com usuário não-root
-* [ ] Melhorar documentação da API
-* [ ] Adicionar CI/CD com GitHub Actions
-* [ ] Adicionar screenshots da aplicação
-* [ ] Melhorar observabilidade e logs
-* [ ] Evoluir integração com PostgreSQL
+```text
+[x] Aplicação Spring Boot
+[x] Autenticação
+[x] Controle de acesso
+[x] Produtos
+[x] Estoque
+[x] PDV
+[x] Caixa
+[x] Delivery
+[x] Relatórios
+[x] Banco H2
+[x] Docker
+[x] Docker Compose
+[ ] Ampliar testes automatizados
+[ ] Testes de integração
+[ ] Migração com Flyway/Liquibase
+[ ] Melhorias de segurança
+[ ] API REST documentada
+[ ] CI/CD
+[ ] Observabilidade
+[ ] Integrações externas
+[ ] PostgreSQL como ambiente principal de produção
+```
 
 ---
 
-## 📚 Objetivos de aprendizado
+# 📚 O que estou praticando com este projeto
 
-Este projeto faz parte da minha evolução no desenvolvimento Backend e tem como principais objetivos praticar:
+Este projeto faz parte do meu processo de evolução como desenvolvedor Backend.
+
+Principais conceitos praticados:
 
 * Java
 * Spring Boot
 * Spring MVC
 * Spring Security
-* Spring Data JPA
-* Hibernate
-* Bancos relacionais
+* Injeção de dependências
+* Arquitetura em camadas
+* JPA / Hibernate
+* Persistência de dados
+* SQL
+* H2
+* PostgreSQL
 * Docker
 * Docker Compose
 * Maven
-* Git/GitHub
-* Desenvolvimento de aplicações web
-* Regras de negócio
 * Autenticação e autorização
+* Controle de acesso
+* Manipulação de arquivos CSV
+* Desenvolvimento de aplicações web
+
+---
+
+# 🎯 Objetivo do projeto
+
+O objetivo principal é transformar conhecimentos teóricos em uma aplicação prática, evoluindo progressivamente a arquitetura, segurança, testes, persistência e implantação.
+
+O projeto continuará sendo desenvolvido conforme novos conhecimentos forem adquiridos.
+
+> **Aprender → Desenvolver → Testar → Melhorar → Evoluir**
 
 ---
 
@@ -437,21 +429,10 @@ Este projeto faz parte da minha evolução no desenvolvimento Backend e tem como
 
 Desenvolvedor Backend em formação, com foco em:
 
-```text
-Java
-Spring Boot
-Python
-SQL
-Docker
-APIs REST
-```
+`Java` `Spring Boot` `Python` `SQL` `Docker`
 
-GitHub:
-
-https://github.com/JoseBlack972
+🔗 GitHub: https://github.com/JoseBlack972
 
 ---
 
-## ⭐ Projeto em destaque
-
-Este projeto representa uma das principais aplicações práticas da minha jornada de estudos em **Java e desenvolvimento Backend**, reunindo desenvolvimento web, persistência de dados, segurança, Docker e regras de negócio em uma única aplicação.
+⭐ Se este projeto foi útil ou interessante, fique à vontade para explorar o código e acompanhar sua evolução.
